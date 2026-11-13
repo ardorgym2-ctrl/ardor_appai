@@ -1,9 +1,9 @@
 // =========================================================
 // analyze-meal : 식단 사진 AI 분석 (Supabase Edge Function)
 //  - 영양성분표 사진 → 표의 숫자를 그대로 읽어요.
-//  - 음식 사진     → 어떤 음식인지 알아낸 뒤, 아르더짐 음식 DB
-//                    (아르더짐 검수 → 공공데이터 → 유저등록 순)에서 먼저 찾아 계산해요.
-//                    DB에 없을 때만 AI 추정값을 써요.
+//  - 음식 사진     → 어떤 음식인지(이름·검색어·양 g)를 알려 줘요.
+//                    계산은 앱이 아르더짐 음식 DB(검수·공공데이터·유저등록)에서 찾아서 해요.
+//                    DB에 없을 때만 AI 추정값(est_per100)을 써요.
 // 필요한 비밀값(Secrets): ANTHROPIC_API_KEY  (선택: CLAUDE_MODEL)
 // =========================================================
 
@@ -13,18 +13,8 @@ const CORS = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-type N = { kcal: number; carb: number; protein: number; fat: number };
-export type Item = {
-  name: string; src: string; food_id: number | null;
-  unit: string; base: number; amt: number; n: N;
-  serving_g?: number | null; serving_label?: string | null;
-  ai_name?: string; confidence?: number | null;
-  candidates?: Item[];
-};
-
 const env = (k: string) => (globalThis as any).Deno?.env.get(k) ?? (globalThis as any).process?.env?.[k];
 const num = (v: unknown) => { const x = Number(v); return Number.isFinite(x) && x >= 0 ? x : null; };
-const r1 = (v: number) => Math.round(v * 10) / 10;
 
 export const TOOL = {
   name: "report_meal",
@@ -83,63 +73,22 @@ export const PROMPT = `이 사진은 피트니스 회원이 먹은 음식 사진
 3) 음식도 영양성분표도 아니면 kind="unknown"으로 해요.
 반드시 report_meal 도구로만 답해요.`;
 
-// ---------- 영양성분표 → 항목 ----------
-export function labelToItem(L: any): { item: Item | null; food: any | null } {
-  if (!L) return { item: null, food: null };
-  const n: N = { kcal: num(L.kcal) ?? 0, carb: num(L.carb) ?? 0, protein: num(L.protein) ?? 0, fat: num(L.fat) ?? 0 };
-  const name = (L.product_name || "").trim() || "포장 식품";
-  const bAmt = num(L.basis_amount), bUnit = String(L.basis_unit || "").toLowerCase().trim();
-  const tAmt = num(L.total_amount), tUnit = String(L.total_unit || "").toLowerCase().trim();
-  const metric = (u: string) => (u === "g" || u === "ml" ? u : null);
-  if (bAmt && metric(bUnit)) {
-    const unit = metric(bUnit)!;
-    const per100: N = { kcal: r1(n.kcal * 100 / bAmt), carb: r1(n.carb * 100 / bAmt), protein: r1(n.protein * 100 / bAmt), fat: r1(n.fat * 100 / bAmt) };
-    const eaten = tAmt && metric(tUnit) === unit ? tAmt : bAmt;
-    const item: Item = { name, src: "label", food_id: null, unit, base: 100, amt: eaten, n: per100,
-      serving_g: eaten, serving_label: tAmt && metric(tUnit) === unit ? "1봉(총 내용량)" : `${bAmt}${unit}` };
-    const food = { name, source: "user", ...per100, basis_unit: unit, serving_g: eaten,
-      serving_label: item.serving_label, sugar: num(L.sugar) != null ? r1(num(L.sugar)! * 100 / bAmt) : null,
-      sodium: num(L.sodium) != null ? r1(num(L.sodium)! * 100 / bAmt) : null, note: "영양성분표 사진으로 등록" };
-    return { item, food };
-  }
-  // g/ml 기준이 없으면(예: 1개당) 1회 단위로
-  return { item: { name, src: "label", food_id: null, unit: "회", base: 1, amt: 1, n, serving_label: bAmt ? `${bAmt}${bUnit}` : "1회" }, food: null };
+// 숫자만 남기고 정리
+const n = (v: unknown) => num(v);
+export function cleanLabel(L: any) {
+  if (!L) return null;
+  return { product_name: L.product_name ? String(L.product_name).slice(0, 40) : null,
+    basis_amount: n(L.basis_amount), basis_unit: L.basis_unit ? String(L.basis_unit).slice(0, 10) : null,
+    total_amount: n(L.total_amount), total_unit: L.total_unit ? String(L.total_unit).slice(0, 10) : null,
+    kcal: n(L.kcal), carb: n(L.carb), protein: n(L.protein), fat: n(L.fat), sugar: n(L.sugar), sodium: n(L.sodium) };
 }
-
-// ---------- 음식 → DB 매칭 ----------
-export function dbRowToItem(f: any, grams: number | null): Item {
-  const unit = f.basis_unit || "g";
-  return {
-    name: f.name, src: f.source, food_id: f.id, unit, base: 100,
-    amt: grams ?? (num(f.serving_g) ?? 100),
-    n: { kcal: Number(f.kcal) || 0, carb: Number(f.carb) || 0, protein: Number(f.protein) || 0, fat: Number(f.fat) || 0 },
-    serving_g: num(f.serving_g), serving_label: f.serving_label ?? null,
-  };
-}
-
-export async function matchFoods(foods: any[], search: (q: string) => Promise<any[]>): Promise<Item[]> {
-  const out: Item[] = [];
-  for (const f of (foods || []).slice(0, 8)) {
-    const grams = num(f.grams);
-    const terms = [f.name, ...(Array.isArray(f.search_terms) ? f.search_terms : [])]
-      .map((s: any) => String(s || "").trim()).filter(Boolean);
-    const seen = new Set<number>(); const cands: Item[] = [];
-    for (const t of [...new Set(terms)].slice(0, 4)) {
-      let rows: any[] = [];
-      try { rows = await search(t); } catch { rows = []; }
-      for (const r of rows) if (!seen.has(r.id)) { seen.add(r.id); cands.push(dbRowToItem(r, grams)); }
-      if (cands.length >= 4) break;
-    }
-    const e = f.est_per100 || {};
-    const aiItem: Item = {
-      name: String(f.name || "음식"), src: "ai", food_id: null, unit: "g", base: 100, amt: grams ?? 100,
-      n: { kcal: num(e.kcal) ?? 0, carb: num(e.carb) ?? 0, protein: num(e.protein) ?? 0, fat: num(e.fat) ?? 0 },
-    };
-    const chosen = cands[0] ?? aiItem;
-    out.push({ ...chosen, ai_name: String(f.name || ""), confidence: num(f.confidence),
-      candidates: [...cands.slice(0, 4), aiItem] });
-  }
-  return out;
+export function cleanFoods(F: any) {
+  return (Array.isArray(F) ? F : []).slice(0, 8).map((f: any) => ({
+    name: String(f?.name || "음식").slice(0, 40),
+    search_terms: (Array.isArray(f?.search_terms) ? f.search_terms : []).slice(0, 4).map((s: any) => String(s).slice(0, 30)),
+    grams: n(f?.grams), confidence: n(f?.confidence),
+    est_per100: { kcal: n(f?.est_per100?.kcal) ?? 0, carb: n(f?.est_per100?.carb) ?? 0, protein: n(f?.est_per100?.protein) ?? 0, fat: n(f?.est_per100?.fat) ?? 0 },
+  }));
 }
 
 async function callClaude(image: string, mediaType: string, hint: string) {
@@ -157,14 +106,13 @@ async function callClaude(image: string, mediaType: string, hint: string) {
         role: "user",
         content: [
           { type: "image", source: { type: "base64", media_type: mediaType, data: image } },
-          { type: "text", text: PROMPT + (hint ? `\n회원 메모: ${hint.slice(0, 200)}` : "") },
+          { type: "text", text: PROMPT + (hint ? `\n끼니: ${hint.slice(0, 50)}` : "") },
         ],
       }],
     }),
   });
   if (!res.ok) {
-    const t = await res.text();
-    console.error("claude error", res.status, t.slice(0, 500));
+    console.error("claude error", res.status, (await res.text()).slice(0, 500));
     throw Object.assign(new Error("ai_failed"), { status: 502 });
   }
   const data = await res.json();
@@ -181,11 +129,6 @@ export async function handler(req: Request): Promise<Response> {
   if (req.method !== "POST") return json({ error: "method" }, 405);
   const URL_ = env("SUPABASE_URL"), ANON = env("SUPABASE_ANON_KEY");
   const auth = req.headers.get("Authorization") || "";
-  const rest = (path: string, body: unknown) => fetch(`${URL_}/rest/v1/${path}`, {
-    method: "POST",
-    headers: { apikey: ANON, Authorization: auth, "content-type": "application/json" },
-    body: JSON.stringify(body),
-  });
   try {
     const u = await fetch(`${URL_}/auth/v1/user`, { headers: { apikey: ANON, Authorization: auth } });
     if (!u.ok) return json({ error: "login" }, 401);
@@ -195,7 +138,10 @@ export async function handler(req: Request): Promise<Response> {
     const mediaType = ["image/jpeg", "image/png", "image/webp"].includes(body.media_type) ? body.media_type : "image/jpeg";
     if (!image || image.length > 7_000_000) return json({ error: "image" }, 400);
 
-    const q = await rest("rpc/ai_take_quota", {});
+    // 하루 사용 한도 (회원·직원 1명 기준)
+    const q = await fetch(`${URL_}/rest/v1/rpc/ai_take_quota`, {
+      method: "POST", headers: { apikey: ANON, Authorization: auth, "content-type": "application/json" }, body: "{}",
+    });
     if (!q.ok) {
       const t = await q.text();
       return json({ error: t.includes("ai_limit") ? "ai_limit" : "quota" }, t.includes("ai_limit") ? 429 : 403);
@@ -203,20 +149,14 @@ export async function handler(req: Request): Promise<Response> {
     const remaining = await q.json();
 
     const ai = await callClaude(image, mediaType, String(body.hint || ""));
-    const search = async (term: string) => {
-      const r = await rest("rpc/search_foods", { q: term, lim: 3 });
-      return r.ok ? await r.json() : [];
-    };
-
-    if (ai.kind === "label") {
-      const { item, food } = labelToItem(ai.label);
-      return json({ kind: "label", items: item ? [item] : [], label_food: food, note: ai.note ?? null, remaining });
-    }
-    if (ai.kind === "food") {
-      const items = await matchFoods(ai.foods, search);
-      return json({ kind: "food", items, note: ai.note ?? null, remaining });
-    }
-    return json({ kind: "unknown", items: [], note: ai.note ?? "음식이나 영양성분표를 찾지 못했어요.", remaining });
+    const kind = ["label", "food"].includes(ai.kind) ? ai.kind : "unknown";
+    return json({
+      kind,
+      label: kind === "label" ? cleanLabel(ai.label) : null,
+      foods: kind === "food" ? cleanFoods(ai.foods) : [],
+      note: ai.note ? String(ai.note).slice(0, 200) : (kind === "unknown" ? "음식이나 영양성분표를 찾지 못했어요." : null),
+      remaining,
+    });
   } catch (e) {
     console.error(e);
     return json({ error: (e as Error).message || "server" }, (e as any).status || 500);
