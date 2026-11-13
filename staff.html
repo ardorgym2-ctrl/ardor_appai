@@ -1,0 +1,1421 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<title>ARDOR</title>
+<meta name="theme-color" content="#955C3E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="ARDOR">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link rel="icon" href="/icons/icon-192.png">
+<link rel="manifest" id="mf" href="/manifest.webmanifest">
+<script>
+  window.ARDOR_STAFF_SITE = /\/staff(\.html)?\/?$/.test(location.pathname);
+  if (window.ARDOR_STAFF_SITE) document.getElementById('mf').href = '/manifest-staff.webmanifest';
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/config.js"></script>
+<style>
+:root{
+  --bg:#F7F1E8; --card:#FFFDF9; --brown:#955C3E; --brown2:#B57A57; --brown-l:#F1E3D6;
+  --ink:#3B2A20; --mute:#8C7B6E; --line:#E7DCCD; --ok:#5E8B5A; --warn:#C9822B; --bad:#B4473A;
+  --safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans KR',system-ui,sans-serif;font-size:15px;line-height:1.5}
+button,input,select,textarea{font:inherit;color:inherit}
+#app{max-width:480px;margin:0 auto;min-height:100vh;position:relative}
+#app.wide{max-width:760px}
+.logo{font-family:'Cinzel',serif;font-weight:700;letter-spacing:.18em;color:var(--brown)}
+h1,h2,h3,.serif{font-family:'Gowun Batang',serif;font-weight:700;margin:0}
+h2{font-size:19px} h3{font-size:16px}
+.mute{color:var(--mute)} .small{font-size:12.5px} .tiny{font-size:11.5px}
+.row{display:flex;align-items:center;gap:8px} .between{justify-content:space-between} .wrap{flex-wrap:wrap}
+.grow{flex:1;min-width:0}
+.hdr{position:sticky;top:0;z-index:20;background:rgba(247,241,232,.96);backdrop-filter:blur(6px);padding:12px 16px 8px;display:flex;align-items:center;justify-content:space-between}
+.hdr .logo{font-size:20px}
+.iconbtn{border:0;background:none;font-size:20px;padding:6px;cursor:pointer;color:var(--brown)}
+.page{padding:4px 14px calc(96px + var(--safe-b))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin:10px 0}
+.card.tight{padding:10px 12px}
+.btn{border:0;border-radius:12px;padding:12px 14px;background:var(--brown);color:#fff;font-weight:700;cursor:pointer;width:100%}
+.btn.sec{background:var(--brown-l);color:var(--brown)}
+.btn.line{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.btn.sm{width:auto;padding:7px 11px;font-size:13px;border-radius:10px}
+.btn:disabled{opacity:.5}
+.lbl{display:block;font-size:13px;color:var(--mute);margin:10px 0 4px}
+.inp{width:100%;border:1px solid var(--line);background:#fff;border-radius:11px;padding:11px 12px;outline:none}
+.inp:focus{border-color:var(--brown2)}
+textarea.inp{min-height:64px;resize:vertical}
+.chk{display:flex;gap:8px;align-items:flex-start;margin:8px 0;font-size:14px}
+.chk input{margin-top:4px;accent-color:var(--brown)}
+.tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--card);border-top:1px solid var(--line);display:flex;padding:6px 4px calc(6px + var(--safe-b));z-index:30}
+.tabbar button{flex:1;border:0;background:none;padding:4px 0;font-size:11.5px;color:var(--mute);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px}
+.tabbar button .ic{font-size:19px;filter:grayscale(1);opacity:.7}
+.tabbar button.on{color:var(--brown);font-weight:700}
+.tabbar button.on .ic{filter:none;opacity:1}
+.datestrip{display:flex;gap:6px;overflow-x:auto;padding:4px 2px 10px;scrollbar-width:none;position:relative;scroll-behavior:smooth}
+.datestrip::-webkit-scrollbar{display:none}
+.dchip{flex:0 0 46px;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:5px 0;text-align:center;cursor:pointer}
+.dchip .d{font-size:16px;font-weight:700}.dchip .w{font-size:11px;color:var(--mute)}
+.dchip.on{background:var(--brown);border-color:var(--brown);color:#fff}.dchip.on .w{color:#f3e3d6}
+.dchip.lock{opacity:.55}
+.dchip .dot{width:5px;height:5px;border-radius:50%;background:var(--ok);margin:2px auto 0;visibility:hidden}
+.dchip.has .dot{visibility:visible}
+.badge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:20px;background:var(--brown-l);color:var(--brown);white-space:nowrap}
+.badge.pub{background:#E5EEF4;color:#36658A}.badge.user{background:#EFE9F5;color:#6B4C8C}.badge.ai{background:#FFF1DA;color:#9A6514}.badge.label{background:#E6F1E4;color:#3F7039}
+.badge.bad{background:#F8E1DE;color:var(--bad)}.badge.warn{background:#FCEBD5;color:var(--warn)}.badge.ok{background:#E6F1E4;color:var(--ok)}
+.seg{display:flex;background:var(--brown-l);border-radius:12px;padding:3px;gap:3px}
+.seg button{flex:1;border:0;background:none;padding:8px 4px;border-radius:9px;cursor:pointer;color:var(--brown);font-weight:500}
+.seg button.on{background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.08);font-weight:700}
+.faces{display:flex;justify-content:space-between;gap:4px}
+.faces button{flex:1;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:6px 0;font-size:24px;cursor:pointer;line-height:1.2}
+.faces button small{display:block;font-size:10.5px;color:var(--mute)}
+.faces button.on{border-color:var(--brown);background:var(--brown-l)}
+.bar{height:8px;background:var(--brown-l);border-radius:8px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--brown);border-radius:8px}
+.bar.over i{background:var(--warn)}
+.item{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px dashed var(--line)}
+.item:first-child{border-top:0}
+.x{border:0;background:none;color:var(--mute);font-size:18px;cursor:pointer;padding:2px 6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:20px;padding:6px 12px;cursor:pointer;font-size:13.5px}
+.chip.on{background:var(--brown);color:#fff;border-color:var(--brown)}
+.chip.l1{background:#FCEBD5;border-color:#E9C58F}.chip.l2{background:#F6CFA0;border-color:#E0A25A}.chip.l3{background:#E79C8F;border-color:#C9665A;color:#fff}
+.photos{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.photos .ph{position:relative;width:72px;height:72px;border-radius:10px;overflow:hidden;background:#eee}
+.photos .ph img{width:100%;height:100%;object-fit:cover;cursor:zoom-in}
+.photos .ph .x{position:absolute;top:0;right:0;background:rgba(0,0,0,.45);color:#fff;font-size:13px;border-radius:0 0 0 8px;padding:1px 6px}
+.photos .ph .tag{position:absolute;left:0;bottom:0;background:rgba(149,92,62,.85);color:#fff;font-size:10px;padding:0 5px;border-radius:0 6px 0 0}
+.ov{position:fixed;inset:0;background:rgba(40,25,15,.45);z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--bg);width:100%;max-width:480px;max-height:88vh;overflow:auto;border-radius:20px 20px 0 0;padding:16px 16px calc(20px + var(--safe-b))}
+.sheet .grab{width:40px;height:4px;border-radius:4px;background:var(--line);margin:-6px auto 10px}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:rgba(59,42,32,.92);color:#fff;padding:10px 16px;border-radius:12px;z-index:90;font-size:14px;max-width:90%;text-align:center}
+.banner{background:linear-gradient(135deg,#955C3E,#B57A57);color:#fff;border-radius:16px;padding:13px 14px;margin:10px 0}
+.banner .t{font-family:'Gowun Batang',serif;font-weight:700}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:9px 6px;text-align:center;cursor:pointer}
+.kpi b{display:block;font-size:20px;color:var(--brown)}.kpi span{font-size:11.5px;color:var(--mute)}
+.kpi.on{border-color:var(--brown);background:var(--brown-l)}
+.mrow{display:flex;align-items:center;gap:10px;padding:11px 12px;background:var(--card);border:1px solid var(--line);border-radius:14px;margin:7px 0;cursor:pointer}
+.av{width:36px;height:36px;border-radius:50%;background:var(--brown-l);color:var(--brown);display:flex;align-items:center;justify-content:center;font-family:'Gowun Batang',serif;font-weight:700;flex:0 0 36px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.stat{background:var(--brown-l);border-radius:12px;padding:8px 10px}
+.stat .v{font-weight:700;font-size:16px}.stat .k{font-size:11.5px;color:var(--mute)}
+.wrow{display:grid;grid-template-columns:1fr 64px 58px 50px 26px;gap:5px;align-items:center;padding:6px 0;border-top:1px dashed var(--line)}
+.wrow input{padding:8px 6px;text-align:center}
+.wrow .nm{font-size:14px;line-height:1.25}
+.wrow.head{border-top:0;font-size:11.5px;color:var(--mute);text-align:center;padding:0}
+.notice{font-size:12px;color:var(--mute);background:var(--brown-l);border-radius:10px;padding:8px 10px;margin:8px 0}
+.spin{display:inline-block;width:18px;height:18px;border:3px solid var(--brown-l);border-top-color:var(--brown);border-radius:50%;animation:sp 1s linear infinite;vertical-align:middle}
+@keyframes sp{to{transform:rotate(360deg)}}
+.center{text-align:center}
+.auth{padding:48px 22px 40px}
+.auth .logo{font-size:34px;text-align:center;display:block}
+.auth .sub{text-align:center;color:var(--mute);font-family:'Gowun Batang',serif;margin:4px 0 26px}
+a{color:var(--brown)}
+.link{background:none;border:0;color:var(--brown);text-decoration:underline;cursor:pointer;padding:4px}
+.fbx{background:#FFF8EF;border-left:3px solid var(--brown2);border-radius:8px;padding:7px 10px;margin-top:6px;font-size:13.5px}
+.aiprev{width:100%;max-height:170px;object-fit:contain;border-radius:12px;background:#fff;border:1px solid var(--line)}
+.aiitem{border:1px solid var(--line);background:var(--card);border-radius:14px;padding:10px 12px;margin:8px 0}
+.aiitem select{width:100%}
+.nut{font-size:12.5px;color:var(--mute)}
+.nut b{color:var(--ink)}
+.empty{color:var(--mute);text-align:center;padding:16px 0;font-size:14px}
+.zoom{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:95;display:flex;align-items:center;justify-content:center}
+.zoom img{max-width:96%;max-height:90%}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(function () {
+'use strict';
+// ================= 기본 설정 =================
+var CFG = window.ARDOR_CONFIG || {};
+var STAFF_SITE = !!window.ARDOR_STAFF_SITE;
+var DOMAIN = CFG.EMAIL_DOMAIN || 'ardor.app';
+var app = document.getElementById('app');
+
+if (!window.supabase || !CFG.SUPABASE_URL || /YOUR-PROJECT/.test(CFG.SUPABASE_URL)) {
+  app.innerHTML = '<div class="auth"><span class="logo">ARDOR</span><p class="sub">설정이 필요해요</p>' +
+    '<div class="card small">config.js에 Supabase 주소와 키를 넣어 주세요. (인터넷 연결도 확인해 주세요)</div></div>';
+  return;
+}
+
+var keepLogin = function () { return localStorage.getItem('ardor_keep') !== '0'; };
+var authStorage = {
+  getItem: function (k) { return localStorage.getItem(k) || sessionStorage.getItem(k); },
+  setItem: function (k, v) { if (keepLogin()) { localStorage.setItem(k, v); sessionStorage.removeItem(k); } else { sessionStorage.setItem(k, v); localStorage.removeItem(k); } },
+  removeItem: function (k) { localStorage.removeItem(k); sessionStorage.removeItem(k); }
+};
+var sb = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY, {
+  auth: { storage: authStorage, persistSession: true, autoRefreshToken: true, storageKey: 'ardor-auth' }
+});
+
+// ================= 도우미 =================
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function $(s, el) { return (el || document).querySelector(s); }
+function $$(s, el) { return Array.prototype.slice.call((el || document).querySelectorAll(s)); }
+function todayKey() { return new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10); }
+function addDays(key, n) { var d = new Date(key + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+function dayDiff(a, b) { return Math.round((new Date(a + 'T00:00:00Z') - new Date(b + 'T00:00:00Z')) / 864e5); }
+var WD = ['일', '월', '화', '수', '목', '금', '토'];
+function wd(key) { return WD[new Date(key + 'T00:00:00Z').getUTCDay()]; }
+function md(key) { return Number(key.slice(5, 7)) + '/' + Number(key.slice(8, 10)); }
+function canEdit(key) { var d = dayDiff(todayKey(), key); return d >= 0 && d <= 6; }
+function n0(v) { var x = Number(v); return isFinite(x) ? x : 0; }
+function nz(v) { return v === '' || v == null || !isFinite(Number(v)) ? null : Number(v); }
+function r0(v) { return Math.round(n0(v)); }
+function r1(v) { return Math.round(n0(v) * 10) / 10; }
+var toastT;
+function toast(msg) {
+  var t = $('.toast'); if (!t) { t = document.createElement('div'); t.className = 'toast'; document.body.appendChild(t); }
+  t.textContent = msg; t.style.display = 'block'; clearTimeout(toastT);
+  toastT = setTimeout(function () { t.style.display = 'none'; }, 2600);
+}
+function sheet(html, onClose) {
+  closeSheet();
+  var ov = document.createElement('div'); ov.className = 'ov'; ov.id = 'ov';
+  ov.innerHTML = '<div class="sheet" id="sheet"><div class="grab"></div>' + html + '</div>';
+  ov.addEventListener('click', function (e) { if (e.target === ov) closeSheet(); });
+  ov._onClose = onClose;
+  document.body.appendChild(ov);
+  return $('#sheet');
+}
+function closeSheet() { var ov = $('#ov'); if (ov) { var f = ov._onClose; ov.remove(); if (f) f(); } }
+function zoom(src) {
+  var z = document.createElement('div'); z.className = 'zoom'; z.innerHTML = '<img src="' + esc(src) + '">';
+  z.addEventListener('click', function () { z.remove(); }); document.body.appendChild(z);
+}
+function errMsg(e) {
+  var m = (e && (e.message || e.error_description || e.msg)) || String(e || '');
+  if (/Failed to fetch|NetworkError|network/i.test(m)) return '인터넷 연결을 확인해 주세요.';
+  if (/JWT|session|not authenticated/i.test(m)) return '로그인이 만료됐어요. 다시 로그인해 주세요.';
+  if (/row-level security|permission|forbidden/i.test(m)) return '권한이 없어요. (수정 가능한 기간은 오늘 포함 최근 7일이에요)';
+  return '문제가 생겼어요: ' + m;
+}
+function idToEmail(id) { return String(id).trim().toLowerCase() + '@' + DOMAIN; }
+var ID_RE = /^[a-z][a-z0-9_]{3,15}$/;
+
+// 초성 검색
+var CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
+function cho(s) {
+  return String(s).split('').map(function (c) { var k = c.charCodeAt(0) - 0xAC00; return k >= 0 && k < 11172 ? CHO[Math.floor(k / 588)] : c; }).join('');
+}
+function matchQ(name, q) { q = q.replace(/\s/g, ''); if (!q) return true; var n = name.replace(/\s/g, ''); return n.indexOf(q) >= 0 || cho(n).indexOf(q) >= 0; }
+
+// ================= 사진 임시저장 (IndexedDB) =================
+var idb = (function () {
+  var dbp;
+  function open() {
+    if (dbp) return dbp;
+    dbp = new Promise(function (res, rej) {
+      if (!window.indexedDB) return rej(new Error('no idb'));
+      var r = indexedDB.open('ardor', 1);
+      r.onupgradeneeded = function () { r.result.createObjectStore('photos'); };
+      r.onsuccess = function () { res(r.result); }; r.onerror = function () { rej(r.error); };
+    });
+    return dbp;
+  }
+  function tx(mode, fn) { return open().then(function (db) { return new Promise(function (res, rej) { var t = db.transaction('photos', mode); var st = t.objectStore('photos'); var out = fn(st); t.oncomplete = function () { res(out && out.result !== undefined ? out.result : out); }; t.onerror = function () { rej(t.error); }; }); }); }
+  return {
+    put: function (k, v) { return tx('readwrite', function (s) { s.put(v, k); }).catch(function () {}); },
+    del: function (k) { return tx('readwrite', function (s) { s.delete(k); }).catch(function () {}); },
+    list: function (prefix) {
+      return open().then(function (db) { return new Promise(function (res) {
+        var out = []; var t = db.transaction('photos', 'readonly'); var c = t.objectStore('photos').openCursor();
+        c.onsuccess = function () { var cur = c.result; if (cur) { if (String(cur.key).indexOf(prefix) === 0) out.push({ key: cur.key, blob: cur.value }); cur.continue(); } else res(out); };
+        c.onerror = function () { res(out); };
+      }); }).catch(function () { return []; });
+    }
+  };
+})();
+
+// 사진 줄이기 → JPEG Blob
+function shrink(file, max, q) {
+  return new Promise(function (res, rej) {
+    var img = new Image(); var url = URL.createObjectURL(file);
+    img.onload = function () {
+      var w = img.naturalWidth, h = img.naturalHeight, s = Math.min(1, max / Math.max(w, h));
+      var c = document.createElement('canvas'); c.width = Math.round(w * s); c.height = Math.round(h * s);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+      c.toBlob(function (b) { b ? res(b) : rej(new Error('사진 변환 실패')); }, 'image/jpeg', q || 0.85);
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); rej(new Error('사진을 읽을 수 없어요')); };
+    img.src = url;
+  });
+}
+function blobToB64(b) { return new Promise(function (res) { var r = new FileReader(); r.onload = function () { res(String(r.result).split(',')[1]); }; r.readAsDataURL(b); }); }
+function pickFile(cb) {
+  var i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*';
+  i.style.display = 'none'; document.body.appendChild(i);
+  i.addEventListener('change', function () { var f = i.files && i.files[0]; i.remove(); if (f) cb(f); });
+  i.click();
+}
+
+// ================= 상태 =================
+var S = {
+  session: null, me: null, tab: 'home', date: todayKey(),
+  rec: null, recDate: null, dirty: false, dbPhotos: [], draftPhotos: [], fb: [], hist: [], trainer: null,
+  invite: null, inviteInfo: null, authMode: 'login', msg: ''
+};
+var MEALS = [['b', '아침'], ['l', '점심'], ['d', '저녁'], ['s', '간식']];
+var MEAL_NAME = { b: '아침', l: '점심', d: '저녁', s: '간식', day: '하루 전체' };
+var SRC = { public: ['공공데이터', 'pub'], ardor: ['아르더짐', ''], user: ['유저등록', 'user'], ai: ['AI 추정', 'ai'], label: ['성분표', 'label'] };
+function srcBadge(s) { var x = SRC[s] || [s, '']; return '<span class="badge ' + x[1] + '">' + x[0] + '</span>'; }
+
+// 초대 링크 (#j-토큰)
+(function () { var m = location.hash.match(/^#j-([a-z0-9]+)/i); if (m) S.invite = m[1]; })();
+
+// ================= 클릭 한 곳에서 처리 =================
+var ACT = {};
+app.addEventListener('click', handleAct);
+document.addEventListener('click', function (e) { if (!app.contains(e.target)) handleAct(e); });
+function handleAct(e) {
+  var el = e.target.closest ? e.target.closest('[data-act]') : null;
+  if (!el) return;
+  var name = el.getAttribute('data-act'); var fn = ACT[name];
+  if (!fn) return;
+  e.preventDefault(); e.stopPropagation();
+  var arg = el.getAttribute('data-arg');
+  fn(arg, el, e);
+}
+
+// ================= 로그인 / 가입 =================
+function setAuthMsg(m) { S.msg = m || ''; var b = $('#authmsg'); if (b) { b.textContent = S.msg; b.style.display = S.msg ? 'block' : 'none'; } }
+
+function renderAuth() {
+  app.className = '';
+  var staff = STAFF_SITE;
+  var last = localStorage.getItem('ardor_last_id') || '';
+  var rememberOn = localStorage.getItem('ardor_remember') !== '0';
+  var inv = S.inviteInfo;
+  var h = '<div class="auth"><span class="logo">ARDOR</span><p class="sub">' + (staff ? '직원·관리자' : '회원 체크') + '</p>';
+  if (S.invite && inv) {
+    h += inv.ok ? '<div class="notice">' + (inv.role === 'staff' ? '직원' : '회원') + ' 초대 링크로 들어왔어요 · ' + esc(inv.branch) + '점' + (inv.trainer ? ' · 담당 ' + esc(inv.trainer) + ' 선생님' : '') + '</div>'
+      : '<div class="notice">초대 링크가 만료됐거나 이미 사용됐어요.</div>';
+  }
+  h += '<div id="authmsg" class="card small" style="display:' + (S.msg ? 'block' : 'none') + ';color:var(--bad)">' + esc(S.msg) + '</div>';
+  if (S.authMode === 'login') {
+    h += '<div class="card"><label class="lbl">아이디</label><input class="inp" id="lid" autocomplete="username" autocapitalize="off" value="' + esc(rememberOn ? last : '') + '">' +
+      '<label class="lbl">비밀번호</label><input class="inp" id="lpw" type="password" autocomplete="current-password">' +
+      '<div class="row" style="gap:16px;margin-top:6px"><label class="chk"><input type="checkbox" id="lkeep"' + (keepLogin() ? ' checked' : '') + '>로그인 유지</label>' +
+      '<label class="chk"><input type="checkbox" id="lrem"' + (rememberOn ? ' checked' : '') + '>아이디 기억하기</label></div>' +
+      '<button class="btn" data-act="login" style="margin-top:8px">로그인</button></div>' +
+      '<div class="center"><button class="link" data-act="authMode" data-arg="signup">' + (staff ? '직원 가입 신청' : '처음이에요 · 회원가입') + '</button></div>';
+  } else {
+    var lockBranch = S.invite && inv && inv.ok;
+    h += '<div class="card"><h3>' + (staff ? '직원 가입 신청' : '회원가입') + '</h3>' +
+      '<label class="lbl">아이디 (영문 소문자로 시작, 4~16자)</label><input class="inp" id="sid" autocapitalize="off" autocomplete="username">' +
+      '<label class="lbl">비밀번호 (6자 이상)</label><input class="inp" id="spw" type="password" autocomplete="new-password">' +
+      '<label class="lbl">비밀번호 확인</label><input class="inp" id="spw2" type="password" autocomplete="new-password">' +
+      '<label class="lbl">이름</label><input class="inp" id="sname">' +
+      (lockBranch ? '' : '<label class="lbl">지점</label><select class="inp" id="sbranch"><option value="망포">망포점</option><option value="서천">서천점</option></select>');
+    if (staff) {
+      h += '<div class="notice">가입 신청 후 관리자가 승인하면 쓸 수 있어요. 회원 건강 정보는 담당 업무에만 쓰고 캡처·공유하지 않아요.</div>';
+    } else {
+      h += '<label class="chk"><input type="checkbox" id="sc1">[필수] 개인정보(체중·컨디션·통증·식단 사진 등 건강 정보) 수집·이용에 동의해요. 담당 트레이너와 관리자만 볼 수 있어요.</label>' +
+        '<label class="chk"><input type="checkbox" id="sc2">[필수] 만 14세 이상이에요.</label>';
+    }
+    h += '<button class="btn" data-act="signup" style="margin-top:8px">' + (staff ? '가입 신청' : '가입하기') + '</button></div>' +
+      '<div class="center"><button class="link" data-act="authMode" data-arg="login">이미 계정이 있어요 · 로그인</button></div>';
+  }
+  if (!staff) h += '<p class="center tiny mute" style="margin-top:20px">직원이신가요? <a href="/staff">직원 페이지</a></p>';
+  else h += '<p class="center tiny mute" style="margin-top:20px"><a href="/">회원 페이지로</a></p>';
+  h += '</div>';
+  app.innerHTML = h;
+  var pw = $('#lpw'); if (pw) pw.addEventListener('keydown', function (e) { if (e.key === 'Enter') ACT.login(); });
+}
+ACT.authMode = function (m) { S.authMode = m; S.msg = ''; renderAuth(); };
+
+ACT.login = async function () {
+  var id = $('#lid').value.trim().toLowerCase(), pw = $('#lpw').value;
+  if (!id || !pw) return setAuthMsg('아이디와 비밀번호를 입력해 주세요.');
+  localStorage.setItem('ardor_keep', $('#lkeep').checked ? '1' : '0');
+  var rem = $('#lrem').checked; localStorage.setItem('ardor_remember', rem ? '1' : '0');
+  if (rem) localStorage.setItem('ardor_last_id', id); else localStorage.removeItem('ardor_last_id');
+  setAuthMsg('');
+  var r = await sb.auth.signInWithPassword({ email: idToEmail(id), password: pw });
+  if (r.error) return setAuthMsg(/Invalid login/i.test(r.error.message) ? '아이디 또는 비밀번호가 맞지 않아요.' : errMsg(r.error));
+  await afterLogin(r.data.session);
+};
+
+ACT.signup = async function () {
+  var id = $('#sid').value.trim().toLowerCase(), pw = $('#spw').value, pw2 = $('#spw2').value, name = $('#sname').value.trim();
+  var br = $('#sbranch') ? $('#sbranch').value : (S.inviteInfo && S.inviteInfo.branch) || '망포';
+  if (!ID_RE.test(id)) return setAuthMsg('아이디는 영문 소문자로 시작하고, 영문 소문자·숫자·_ 로 4~16자예요.');
+  if (pw.length < 6) return setAuthMsg('비밀번호는 6자 이상이에요.');
+  if (pw !== pw2) return setAuthMsg('비밀번호 확인이 달라요.');
+  if (!name) return setAuthMsg('이름을 입력해 주세요.');
+  if (!STAFF_SITE && (!$('#sc1').checked || !$('#sc2').checked)) return setAuthMsg('필수 동의에 체크해 주세요.');
+  var useInvite = S.invite && S.inviteInfo && S.inviteInfo.ok;
+  if (useInvite && (S.inviteInfo.role === 'staff') !== STAFF_SITE) {
+    return setAuthMsg(STAFF_SITE ? '회원 초대 링크예요. 회원 페이지에서 가입해 주세요.' : '직원 초대 링크예요. 직원 페이지(/staff)에서 가입해 주세요.');
+  }
+  if (!useInvite) {
+    var o = await sb.rpc(STAFF_SITE ? 'open_staff_signup_on' : 'open_signup_on');
+    if (!o.error && o.data === false) return setAuthMsg(STAFF_SITE ? '지금은 직원 가입 신청을 받지 않아요. 관리자에게 초대 링크를 받아 주세요.' : '지금은 자유 가입이 닫혀 있어요. 담당 선생님께 초대 링크를 받아 주세요.');
+  }
+  setAuthMsg('');
+  var btn = $('[data-act="signup"]'); btn.disabled = true;
+  var r = await sb.auth.signUp({ email: idToEmail(id), password: pw, options: { data: {
+    login_id: id, name: name, branch: br, kind: STAFF_SITE ? 'staff' : 'member', invite: useInvite ? S.invite : '' } } });
+  btn.disabled = false;
+  if (r.error) {
+    var m = r.error.message || '';
+    if (/already|registered|exists/i.test(m)) return setAuthMsg('이미 있는 아이디예요. 다른 아이디를 써 주세요.');
+    if (/Database error/i.test(m)) return setAuthMsg('가입할 수 없어요. 초대 링크가 만료됐거나 가입이 닫혀 있어요.');
+    return setAuthMsg(errMsg(r.error));
+  }
+  if (!r.data.session) {
+    var l = await sb.auth.signInWithPassword({ email: idToEmail(id), password: pw });
+    if (l.error) return setAuthMsg('가입은 됐지만 바로 로그인되지 않았어요. (관리자: Supabase에서 이메일 확인을 꺼 주세요)');
+    r.data.session = l.data.session;
+  }
+  if (useInvite) { history.replaceState(null, '', location.pathname); S.invite = null; }
+  localStorage.setItem('ardor_last_id', id);
+  toast(STAFF_SITE ? '가입 신청됐어요' : '가입을 환영해요!');
+  await afterLogin(r.data.session);
+};
+
+async function loadMe() {
+  var u = S.session && S.session.user; if (!u) return null;
+  var r = await sb.from('profiles').select('*').eq('id', u.id).maybeSingle();
+  if (r.error) throw r.error;
+  return r.data;
+}
+
+function blockScreen(title, body, showLogout) {
+  app.className = '';
+  app.innerHTML = '<div class="auth"><span class="logo">ARDOR</span><p class="sub">' + esc(title) + '</p><div class="card">' + body + '</div>' +
+    (showLogout ? '<button class="btn sec" data-act="logout">로그아웃</button>' : '') + '</div>';
+}
+
+async function afterLogin(session) {
+  S.session = session;
+  var me;
+  try { me = await loadMe(); } catch (e) { return blockScreen('연결 문제', esc(errMsg(e)), true); }
+  if (!me) return blockScreen('계정 정보 없음', '프로필이 만들어지지 않았어요. 관리자에게 문의해 주세요. (SQL 02번이 실행됐는지 확인)', true);
+  S.me = me;
+  var staffRole = me.role === 'staff' || me.role === 'admin';
+  if (!STAFF_SITE && me.role !== 'member') {
+    await sb.auth.signOut(); S.me = null; S.authMode = 'login';
+    S.msg = '직원 계정이에요. 직원 페이지(' + location.origin + '/staff)로 로그인해 주세요.';
+    return renderAuth();
+  }
+  if (STAFF_SITE && me.role === 'member') {
+    await sb.auth.signOut(); S.me = null; S.authMode = 'login';
+    S.msg = '회원 계정이에요. 회원 페이지(' + location.origin + '/)로 로그인해 주세요.';
+    return renderAuth();
+  }
+  if (STAFF_SITE && me.role === 'applicant') return blockScreen('승인 대기 중', esc(me.name) + ' 선생님, 가입 신청이 접수됐어요. 관리자가 승인하면 바로 쓸 수 있어요.', true);
+  if (me.role === 'rejected') return blockScreen('가입 거절', '가입 신청이 승인되지 않았어요. 관리자에게 문의해 주세요.', true);
+  if (STAFF_SITE && staffRole) return Staff.start();
+  return Member.start();
+}
+
+ACT.logout = async function () {
+  if (S.dirty && !confirm('저장하지 않은 내용이 있어요. 그래도 로그아웃할까요? (오늘 기록은 임시저장돼요)')) return;
+  await sb.auth.signOut();
+  S.me = null; S.session = null; S.rec = null; S.authMode = 'login'; S.msg = ''; S.tab = 'home'; S.dirty = false;
+  closeSheet(); renderAuth();
+};
+
+async function boot() {
+  app.innerHTML = '<div class="auth center"><span class="logo">ARDOR</span><p class="sub"><span class="spin"></span></p></div>';
+  if (S.invite) {
+    var p = await sb.rpc('peek_invite', { p_token: S.invite });
+    S.inviteInfo = p.data || { ok: false };
+    if (S.inviteInfo.ok) S.authMode = 'signup';
+  }
+  var s = await sb.auth.getSession();
+  if (s.data && s.data.session) return afterLogin(s.data.session);
+  renderAuth();
+}
+
+
+// ================= 공통: 영양 계산 =================
+function itemN(it) {
+  var f = n0(it.amt) / (n0(it.base) || 100), n = it.n || {};
+  return { kcal: n0(n.kcal) * f, carb: n0(n.carb) * f, protein: n0(n.protein) * f, fat: n0(n.fat) * f };
+}
+function sumN(list) {
+  var t = { kcal: 0, carb: 0, protein: 0, fat: 0 };
+  (list || []).forEach(function (it) { var x = itemN(it); t.kcal += x.kcal; t.carb += x.carb; t.protein += x.protein; t.fat += x.fat; });
+  return t;
+}
+function dayTot(rec) {
+  var all = []; MEALS.forEach(function (m) { var ml = rec.meals && rec.meals[m[0]]; if (ml) all = all.concat(ml.items || []); });
+  var t = sumN(all); return { kcal: r0(t.kcal), carb: r1(t.carb), protein: r1(t.protein), fat: r1(t.fat) };
+}
+function nutLine(t) { return '<b>' + r0(t.kcal) + '</b>kcal · 탄 ' + r1(t.carb) + ' · 단 ' + r1(t.protein) + ' · 지 ' + r1(t.fat) + 'g'; }
+function amtLabel(it) { return (it.unit === '회' ? r1(it.amt) + '회' : r0(it.amt) + (it.unit || 'g')); }
+function goalBars(t, g) {
+  var rows = [['kcal', '칼로리', 'kcal'], ['carb', '탄수화물', 'g'], ['protein', '단백질', 'g'], ['fat', '지방', 'g']];
+  return rows.map(function (r) {
+    var v = n0(t[r[0]]), G = n0(g[r[0]]), p = G ? Math.min(100, v / G * 100) : 0;
+    return '<div style="margin:7px 0"><div class="row between small"><span>' + r[1] + '</span><span class="mute">' + (r[0] === 'kcal' ? r0(v) : r1(v)) + (G ? ' / ' + G : '') + ' ' + r[2] + '</span></div>' +
+      '<div class="bar' + (G && v > G * 1.1 ? ' over' : '') + '"><i style="width:' + p + '%"></i></div></div>';
+  }).join('');
+}
+function shortText(t, g) {
+  if (!g || !g.kcal) return '<p class="small mute">목표를 설정하면 부족한 양을 알려 드려요. (⚙ 설정)</p>';
+  var out = [], d;
+  d = g.protein - t.protein; if (g.protein && d > 3) out.push('단백질 <b>' + r0(d) + 'g</b>');
+  d = g.carb - t.carb; if (g.carb && d > 10) out.push('탄수화물 <b>' + r0(d) + 'g</b>');
+  d = g.fat - t.fat; if (g.fat && d > 5) out.push('지방 <b>' + r0(d) + 'g</b>');
+  var k = g.kcal - t.kcal;
+  var s = k >= 0 ? '목표까지 <b>' + r0(k) + 'kcal</b> 남았어요.' : '목표보다 <b>' + r0(-k) + 'kcal</b> 더 먹었어요.';
+  return '<p class="small" style="margin:6px 0 0">' + s + (out.length ? ' ' + out.join(', ') + ' 더 필요해요.' : '') + '</p>';
+}
+
+// ================= 공통: 목표 설정 시트 (회원·직원 같이 씀) =================
+function calcGoal(type, w, bf) {
+  w = n0(w); if (!w) return null;
+  var lbm = bf ? w * (1 - n0(bf) / 100) : w * 0.75;
+  var tdee = (370 + 21.6 * lbm) * 1.45;
+  var kcal = type === 'gain' ? tdee + 250 : type === 'keep' ? tdee : tdee - 450;
+  kcal = Math.round(kcal / 10) * 10;
+  var protein = Math.round(w * (type === 'gain' ? 2.0 : type === 'keep' ? 1.6 : 1.8));
+  var fat = Math.round(kcal * 0.25 / 9);
+  var carb = Math.max(0, Math.round((kcal - protein * 4 - fat * 9) / 4));
+  return { kcal: kcal, carb: carb, protein: protein, fat: fat };
+}
+var GOAL_TYPE = { loss: '체중 감량', gain: '근육량 증가', keep: '유지' };
+function goalSummary(g) {
+  g = g || {};
+  if (!g.kcal) return '<p class="mute small">아직 목표가 없어요.</p>';
+  return '<div class="grid2">' +
+    '<div class="stat"><div class="k">목표</div><div class="v">' + esc(GOAL_TYPE[g.type] || '-') + '</div></div>' +
+    '<div class="stat"><div class="k">하루 칼로리</div><div class="v">' + g.kcal + ' kcal</div></div>' +
+    '<div class="stat"><div class="k">탄 · 단 · 지</div><div class="v">' + (g.carb || 0) + ' · ' + (g.protein || 0) + ' · ' + (g.fat || 0) + 'g</div></div>' +
+    '<div class="stat"><div class="k">시작 → 목표 체중</div><div class="v">' + (g.start_weight || '-') + ' → ' + (g.target_weight || '-') + 'kg</div></div></div>';
+}
+function goalSheet(goal, title, onSave) {
+  var g = JSON.parse(JSON.stringify(goal || {})); g.type = g.type || 'loss';
+  function f(id, lbl, v, ph) { return '<div><label class="lbl">' + lbl + '</label><input class="inp" type="number" inputmode="decimal" id="' + id + '" value="' + (v == null ? '' : esc(v)) + '" placeholder="' + (ph || '') + '"></div>'; }
+  var el = sheet('<h3>' + esc(title) + '</h3>' +
+    '<label class="lbl">목표</label><div class="seg" id="gtype">' + Object.keys(GOAL_TYPE).map(function (k) { return '<button data-act="gType" data-arg="' + k + '" class="' + (g.type === k ? 'on' : '') + '">' + GOAL_TYPE[k] + '</button>'; }).join('') + '</div>' +
+    '<div class="grid2">' + f('g_sw', '시작 체중(kg)', g.start_weight) + f('g_tw', '목표 체중(kg)', g.target_weight) + f('g_bf', '체지방률(%) · 선택', g.body_fat, '인바디') + '<div><label class="lbl">&nbsp;</label><button class="btn sec" data-act="gCalc">자동 계산</button></div></div>' +
+    '<div class="notice">체중(과 체지방률)을 넣고 자동 계산을 누르면 하루 칼로리·탄단지를 채워 드려요. 숫자는 직접 고쳐도 돼요.</div>' +
+    '<div class="grid2">' + f('g_kcal', '하루 칼로리(kcal)', g.kcal) + f('g_p', '단백질(g)', g.protein) + f('g_c', '탄수화물(g)', g.carb) + f('g_f', '지방(g)', g.fat) + '</div>' +
+    '<button class="btn" data-act="gSave" style="margin-top:14px">저장</button>');
+  ACT.gType = function (k, b) { g.type = k; $$('#gtype button').forEach(function (x) { x.classList.toggle('on', x === b); }); };
+  ACT.gCalc = function () {
+    var c = calcGoal(g.type, $('#g_sw').value, $('#g_bf').value);
+    if (!c) return toast('시작 체중을 넣어 주세요');
+    $('#g_kcal').value = c.kcal; $('#g_p').value = c.protein; $('#g_c').value = c.carb; $('#g_f').value = c.fat;
+  };
+  ACT.gSave = async function () {
+    var out = { type: g.type, start_weight: nz($('#g_sw').value), target_weight: nz($('#g_tw').value), body_fat: nz($('#g_bf').value),
+      kcal: nz($('#g_kcal').value), protein: nz($('#g_p').value), carb: nz($('#g_c').value), fat: nz($('#g_f').value) };
+    var b = $('[data-act="gSave"]'); b.disabled = true;
+    try { await onSave(out); closeSheet(); toast('목표를 저장했어요'); } catch (e) { toast(errMsg(e)); b.disabled = false; }
+  };
+  return el;
+}
+
+var FACES = ['😄', '🙂', '😐', '😣', '😫'];
+var SCALES = {
+  cond: ['컨디션', ['아주 좋음', '좋음', '보통', '나쁨', '아주 나쁨']],
+  fatigue: ['피로도', ['없음', '조금', '보통', '많음', '아주 많음']],
+  stress: ['스트레스', ['없음', '조금', '보통', '많음', '아주 많음']]
+};
+var FULL = ['배고파요', '조금 부족', '알맞아요', '배불러요', '과식했어요'];
+var FULL_FACE = ['😋', '🙂', '😊', '😮‍💨', '🤢'];
+var PAIN_PARTS = ['목', '어깨', '등', '허리', '골반', '엉덩이', '무릎', '발목', '손목', '팔꿈치', '허벅지', '종아리'];
+var PAIN_LV = ['', '약', '중', '강'];
+function painLevelOf(p) { var l = String(p).split(':')[1]; return l === '강' ? 3 : l === '중' ? 2 : 1; }
+function maxPain(arr) { var m = 0; (arr || []).forEach(function (p) { m = Math.max(m, painLevelOf(p)); }); return m || null; }
+
+var EXERCISES = {
+  '가슴': ['벤치프레스', '인클라인 벤치프레스', '덤벨 프레스', '인클라인 덤벨 프레스', '체스트 프레스 머신', '펙덱 플라이', '케이블 크로스오버', '푸시업', '딥스'],
+  '등': ['랫풀다운', '풀업', '어시스트 풀업', '바벨 로우', '덤벨 로우', '시티드 케이블 로우', '데드리프트', 'T바 로우'],
+  '하체': ['스쿼트', '레그프레스', '런지', '불가리안 스플릿 스쿼트', '레그 익스텐션', '레그 컬', '루마니안 데드리프트', '힙 쓰러스트', '힙 어브덕션', '카프 레이즈'],
+  '어깨': ['오버헤드 프레스', '덤벨 숄더 프레스', '사이드 레터럴 레이즈', '프런트 레이즈', '리어 델트 플라이', '페이스풀'],
+  '팔': ['바벨 컬', '덤벨 컬', '해머 컬', '케이블 푸시다운', '오버헤드 익스텐션', '라잉 트라이셉스 익스텐션'],
+  '코어': ['플랭크', '사이드 플랭크', '크런치', '레그 레이즈', '데드버그', '버드독', '행잉 레그 레이즈'],
+  '유산소': ['걷기', '트레드밀', '사이클', '스텝밀', '로잉머신', '줄넘기', '러닝']
+};
+
+// ================= 회원 화면 =================
+var Member = (function () {
+  var uid = function () { return S.me.id; };
+  function em() { return { items: [], memo: '', full: null }; }
+  function emptyRec() { return { weight: null, sleep: null, steps: null, water: null, muscle: null, body_fat: null, trained: null, workouts: [], cond: null, fatigue: null, stress: null, pain: [], meals: { b: em(), l: em(), d: em(), s: em() } }; }
+  function normRec(r) {
+    var e = emptyRec(); if (!r) return e;
+    Object.keys(e).forEach(function (k) { if (r[k] !== undefined && r[k] !== null) e[k] = r[k]; });
+    MEALS.forEach(function (m) { var x = (r.meals || {})[m[0]] || {}; e.meals[m[0]] = { items: x.items || [], memo: x.memo || '', full: x.full || null }; });
+    e.workouts = Array.isArray(e.workouts) ? e.workouts : []; e.pain = Array.isArray(e.pain) ? e.pain : [];
+    return e;
+  }
+  function draftKey(d) { return 'ardor_draft_' + uid() + '_' + d; }
+  function saveDraft() { if (S.recDate === todayKey()) { try { localStorage.setItem(draftKey(S.recDate), JSON.stringify(S.rec)); } catch (e) {} } }
+  function touch() { S.dirty = true; saveDraft(); var s = $('#savestate'); if (s) s.textContent = '저장 전이에요' + (S.recDate === todayKey() ? ' · 임시저장됨' : ''); }
+  function goal() { return S.me.goal || {}; }
+  function ro() { return !canEdit(S.recDate); }
+  function dis() { return ro() ? ' disabled' : ''; }
+
+  async function start() {
+    app.className = '';
+    var ik = await sb.from('intake').select('member_id').eq('member_id', uid()).maybeSingle();
+    if (!ik.error && !ik.data) return renderIntake();
+    S.trainer = null;
+    if (S.me.trainer_id) { var t = await sb.from('profiles').select('id,name').eq('id', S.me.trainer_id).maybeSingle(); S.trainer = t.data; }
+    await Promise.all([loadHist(), loadFbRecent()]);
+    await openDate(todayKey());
+    render();
+  }
+
+  async function loadHist() {
+    var r = await sb.from('daily_records').select('record_date,weight,tot,status,trained,cond').eq('member_id', uid()).gte('record_date', addDays(todayKey(), -59)).order('record_date', { ascending: true });
+    S.hist = r.data || [];
+  }
+  async function loadFbRecent() {
+    var r = await sb.from('feedback').select('*').eq('member_id', uid()).gte('record_date', addDays(todayKey(), -13)).order('created_at', { ascending: false }).limit(40);
+    S.fbRecent = r.data || [];
+    var ids = []; S.fbRecent.forEach(function (f) { if (ids.indexOf(f.author_id) < 0) ids.push(f.author_id); });
+    S.names = S.names || {};
+    if (ids.length) { var p = await sb.from('profiles').select('id,name').in('id', ids); (p.data || []).forEach(function (x) { S.names[x.id] = x.name; }); }
+  }
+
+  async function openDate(d) {
+    S.recDate = d; S.date = d; S.dirty = false;
+    var r = await sb.from('daily_records').select('*').eq('member_id', uid()).eq('record_date', d).maybeSingle();
+    S.rec = normRec(r.data); S.recSaved = r.data;
+    if (d === todayKey()) {
+      var dr = localStorage.getItem(draftKey(d));
+      if (dr) { try { S.rec = normRec(JSON.parse(dr)); S.dirty = true; } catch (e) {} }
+    }
+    var ph = await sb.from('meal_photos').select('*').eq('member_id', uid()).eq('record_date', d).order('created_at', { ascending: true });
+    S.dbPhotos = ph.data || [];
+    if (S.dbPhotos.length) {
+      var su = await sb.storage.from('meal-photos').createSignedUrls(S.dbPhotos.map(function (p) { return p.path; }), 3600);
+      (su.data || []).forEach(function (x, i) { S.dbPhotos[i].url = x.signedUrl; });
+    }
+    S.draftPhotos.forEach(function (p) { URL.revokeObjectURL(p.url); });
+    var dp = await idb.list(uid() + '|' + d + '|');
+    S.draftPhotos = dp.map(function (x) { return { key: x.key, meal: String(x.key).split('|')[2], blob: x.blob, url: URL.createObjectURL(x.blob) }; });
+    if (S.draftPhotos.length) S.dirty = true;
+    S.fb = (S.fbRecent || []).filter(function (f) { return f.record_date === d; });
+  }
+
+  // ---------- 그리기 ----------
+  function render() {
+    var tab = S.tab;
+    var h = '<div class="hdr"><span class="logo">ARDOR</span><div class="row"><span class="small mute">' + esc(S.me.name) + '님</span>' +
+      '<button class="iconbtn" data-act="tab" data-arg="settings" aria-label="설정">⚙</button></div></div><div class="page">';
+    if (tab !== 'settings') h += dateStrip();
+    if (tab !== 'settings' && ro()) h += '<div class="notice">7일이 지난 기록은 볼 수만 있어요.</div>';
+    h += ({ home: vHome, meal: vMeal, work: vWork, cond: vCond, body: vBody, settings: vSettings }[tab] || vHome)();
+    h += '</div>';
+    var tabs = [['home', '🏠', '홈'], ['meal', '🍚', '식단'], ['work', '🏋️', '운동'], ['cond', '🙂', '컨디션'], ['body', '📝', '오늘 기록']];
+    h += '<nav class="tabbar">' + tabs.map(function (t) { return '<button data-act="tab" data-arg="' + t[0] + '" class="' + (tab === t[0] ? 'on' : '') + '"><span class="ic">' + t[1] + '</span>' + t[2] + '</button>'; }).join('') + '</nav>';
+    app.innerHTML = h;
+    centerStrip();
+  }
+  function dateStrip() {
+    var t = todayKey(), h = '<div class="datestrip" id="dstrip">';
+    var has = {}; (S.hist || []).forEach(function (r) { has[r.record_date] = 1; });
+    for (var i = 29; i >= 0; i--) {
+      var d = addDays(t, -i);
+      h += '<div class="dchip' + (d === S.recDate ? ' on' : '') + (canEdit(d) ? '' : ' lock') + (has[d] ? ' has' : '') + '" data-act="pickDate" data-arg="' + d + '">' +
+        '<div class="w">' + (d === t ? '오늘' : wd(d)) + '</div><div class="d">' + Number(d.slice(8)) + '</div><div class="dot"></div></div>';
+    }
+    return h + '</div>';
+  }
+  function centerStrip() {
+    var s = $('#dstrip'), c = s && $('.dchip.on', s); if (!c) return;
+    s.style.scrollBehavior = 'auto';
+    var sr = s.getBoundingClientRect(), cr = c.getBoundingClientRect();
+    s.scrollLeft += (cr.left + cr.width / 2) - (sr.left + sr.width / 2);
+    s.style.scrollBehavior = '';
+  }
+  function saveBar() {
+    if (ro()) return '';
+    var st = S.dirty ? '저장 전이에요' + (S.recDate === todayKey() ? ' · 임시저장됨' : '') : (S.recSaved ? '저장된 기록이에요' : '');
+    return '<button class="btn" data-act="save" style="margin-top:6px">저장하기</button><p class="center tiny mute" id="savestate">' + st + '</p>';
+  }
+  function dayTitle() { var d = S.recDate; return (d === todayKey() ? '오늘' : md(d) + '(' + wd(d) + ')'); }
+
+  // ---------- 홈 ----------
+  function vHome() {
+    var rec = S.rec, g = goal(), t = dayTot(rec), h = '';
+    var fbs = (S.fbRecent || []).filter(function (f) { return dayDiff(todayKey(), f.record_date) <= 6; });
+    if (fbs.length) {
+      var f = fbs[0];
+      h += '<div class="banner"><div class="row between"><span class="t">💬 트레이너 피드백</span><button class="btn sm sec" data-act="fbAll">지난 식단 피드백</button></div>' +
+        '<div class="small" style="margin-top:6px;opacity:.95">' + md(f.record_date) + ' ' + esc(MEAL_NAME[f.meal] || '') + ' · ' + esc(f.body) + '</div></div>';
+    }
+    var w = rec.workouts.length || rec.trained === 'rest';
+    var checks = [
+      ['meal', '식단', MEALS.some(function (m) { return rec.meals[m[0]].items.length; })],
+      ['work', '운동', !!rec.trained && (rec.trained === 'rest' || w)],
+      ['cond', '컨디션', !!rec.cond],
+      ['body', '오늘 기록', rec.weight != null && rec.sleep != null]
+    ];
+    h += '<div class="card"><div class="row between"><h3>' + dayTitle() + ' 체크</h3><span class="small mute">' + checks.filter(function (c) { return c[2]; }).length + ' / 4</span></div>' +
+      checks.map(function (c) { return '<div class="item" data-act="tab" data-arg="' + c[0] + '" style="cursor:pointer"><span class="grow">' + c[1] + '</span>' + (c[2] ? '<span class="badge ok">완료</span>' : '<span class="badge warn">아직</span>') + '<span class="mute">›</span></div>'; }).join('') + '</div>';
+    // 체중 변화
+    var ws = (S.hist || []).filter(function (r) { return r.weight != null; });
+    var cur = rec.weight != null ? rec.weight : (ws.length ? ws[ws.length - 1].weight : null);
+    h += '<div class="card"><h3>체중 변화</h3>';
+    if (ws.length >= 2) h += spark(ws.map(function (r) { return { d: r.record_date, v: Number(r.weight) }; }), g.target_weight);
+    else h += '<p class="small mute">체중을 이틀 이상 기록하면 그래프가 보여요.</p>';
+    if (g.start_weight && g.target_weight && cur != null) {
+      var tot = g.start_weight - g.target_weight, done = g.start_weight - cur;
+      var p = tot ? Math.max(0, Math.min(100, done / tot * 100)) : 0;
+      h += '<div class="row between small" style="margin-top:6px"><span>목표 도달률</span><b>' + r0(p) + '%</b></div><div class="bar"><i style="width:' + p + '%"></i></div>' +
+        '<p class="tiny mute">시작 ' + g.start_weight + 'kg → 지금 ' + cur + 'kg → 목표 ' + g.target_weight + 'kg</p>';
+    }
+    h += '</div>';
+    h += '<div class="card"><h3>' + dayTitle() + ' 먹은 것</h3>' + goalBars(t, g) + shortText(t, g) + ratio(t) + '</div>';
+    return h;
+  }
+  function ratio(t) {
+    var c = t.carb * 4, p = t.protein * 4, f = t.fat * 9, s = c + p + f; if (!s) return '';
+    return '<div class="row small mute" style="margin-top:8px;gap:4px"><span>탄단지 비율</span><span class="grow"></span><span>탄 ' + r0(c / s * 100) + '% · 단 ' + r0(p / s * 100) + '% · 지 ' + r0(f / s * 100) + '%</span></div>';
+  }
+  function spark(pts, target) {
+    var W = 320, H = 90, pad = 8, vs = pts.map(function (p) { return p.v; }); if (target) vs.push(Number(target));
+    var mn = Math.min.apply(null, vs) - 0.5, mx = Math.max.apply(null, vs) + 0.5;
+    var X = function (i) { return pad + i * (W - 2 * pad) / Math.max(1, pts.length - 1); }, Y = function (v) { return H - pad - (v - mn) / (mx - mn) * (H - 2 * pad); };
+    var d = pts.map(function (p, i) { return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(p.v).toFixed(1); }).join(' ');
+    var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto">';
+    if (target) s += '<line x1="0" x2="' + W + '" y1="' + Y(target) + '" y2="' + Y(target) + '" stroke="#B57A57" stroke-dasharray="4 4" stroke-width="1"/><text x="' + (W - 4) + '" y="' + (Y(target) - 4) + '" text-anchor="end" font-size="10" fill="#8C7B6E">목표 ' + target + '</text>';
+    s += '<path d="' + d + '" fill="none" stroke="#955C3E" stroke-width="2.2" stroke-linejoin="round"/>';
+    var l = pts[pts.length - 1]; s += '<circle cx="' + X(pts.length - 1) + '" cy="' + Y(l.v) + '" r="3.5" fill="#955C3E"/><text x="' + (X(pts.length - 1) - 6) + '" y="' + (Y(l.v) - 7) + '" text-anchor="end" font-size="11" fill="#3B2A20">' + l.v + 'kg</text>';
+    return s + '</svg><div class="row between tiny mute"><span>' + md(pts[0].d) + '</span><span>' + md(l.d) + '</span></div>';
+  }
+  ACT.fbAll = function () {
+    var list = S.fbRecent || [];
+    sheet('<h3>지난 식단 피드백</h3>' + (list.length ? list.map(function (f) {
+      return '<div class="card tight"><div class="row between small"><b>' + md(f.record_date) + '(' + wd(f.record_date) + ') ' + esc(MEAL_NAME[f.meal] || '') + '</b><span class="mute">' + esc(S.names[f.author_id] || '트레이너') + '</span></div><div>' + esc(f.body) + '</div></div>';
+    }).join('') : '<p class="empty">아직 받은 피드백이 없어요.</p>'));
+  };
+
+  // ---------- 식단 ----------
+  function photosOf(meal) {
+    var h = '';
+    S.dbPhotos.filter(function (p) { return p.meal === meal; }).forEach(function (p) {
+      h += '<div class="ph"><img src="' + esc(p.url || '') + '" data-act="zoom" data-arg="' + esc(p.url || '') + '">' + (ro() ? '' : '<button class="x" data-act="rmPhoto" data-arg="db:' + p.id + '">×</button>') + '</div>';
+    });
+    S.draftPhotos.filter(function (p) { return p.meal === meal; }).forEach(function (p) {
+      h += '<div class="ph"><img src="' + p.url + '" data-act="zoom" data-arg="' + p.url + '"><span class="tag">저장 전</span>' + (ro() ? '' : '<button class="x" data-act="rmPhoto" data-arg="dr:' + esc(p.key) + '">×</button>') + '</div>';
+    });
+    return h ? '<div class="photos">' + h + '</div>' : '';
+  }
+  function vMeal() {
+    var rec = S.rec, g = goal(), t = dayTot(rec);
+    var h = '<div class="card"><div class="row between"><h3>' + dayTitle() + ' 식단</h3><span class="small">' + nutLine(t) + '</span></div>' + goalBars(t, g) + shortText(t, g) + '</div>';
+    MEALS.forEach(function (m) {
+      var k = m[0], ml = rec.meals[k], mt = sumN(ml.items);
+      h += '<div class="card"><div class="row between"><h3>' + m[1] + '</h3><span class="small mute">' + r0(mt.kcal) + ' kcal</span></div>';
+      if (ml.items.length) {
+        h += '<div style="margin-top:4px">' + ml.items.map(function (it, i) {
+          var x = itemN(it);
+          return '<div class="item"><div class="grow" data-act="editItem" data-arg="' + k + ':' + i + '" style="cursor:pointer"><div>' + esc(it.name) + ' ' + srcBadge(it.src) + (it.via === 'ai' ? ' <span class="tiny mute">📷</span>' : '') + '</div>' +
+            '<div class="nut">' + amtLabel(it) + ' · ' + r0(x.kcal) + 'kcal · 탄' + r1(x.carb) + ' 단' + r1(x.protein) + ' 지' + r1(x.fat) + '</div></div>' +
+            (ro() ? '' : '<button class="x" data-act="rmItem" data-arg="' + k + ':' + i + '">×</button>') + '</div>';
+        }).join('') + '</div>';
+      } else h += '<p class="small mute" style="margin:4px 0">아직 없어요.</p>';
+      if (!ro()) h += '<div class="grid3" style="margin-top:8px"><button class="btn sm sec" data-act="search" data-arg="' + k + '">＋ 음식 검색</button><button class="btn sm" data-act="ai" data-arg="' + k + '">📷 AI 분석</button><button class="btn sm line" data-act="addPhoto" data-arg="' + k + '">🖼 사진 첨부</button></div>';
+      h += photosOf(k);
+      h += '<label class="lbl">식후 포만감</label><div class="faces">' + FULL.map(function (l, i) { return '<button data-act="full" data-arg="' + k + ':' + (i + 1) + '" class="' + (ml.full === i + 1 ? 'on' : '') + '"' + dis() + '>' + FULL_FACE[i] + '<small>' + l + '</small></button>'; }).join('') + '</div>';
+      h += '<label class="lbl">메모</label><textarea class="inp" data-memo="' + k + '" placeholder="예) 외식, 남김, 간식 대신 과일"' + dis() + '>' + esc(ml.memo) + '</textarea>';
+      S.fb.filter(function (f) { return f.meal === k; }).forEach(function (f) { h += '<div class="fbx">💬 <b>' + esc(S.names[f.author_id] || '트레이너') + '</b> ' + esc(f.body) + '</div>'; });
+      h += '</div>';
+    });
+    S.fb.filter(function (f) { return f.meal === 'day'; }).forEach(function (f) { h += '<div class="fbx">💬 <b>하루 피드백</b> ' + esc(f.body) + '</div>'; });
+    return h + saveBar();
+  }
+  ACT.rmItem = function (a) { var p = a.split(':'); S.rec.meals[p[0]].items.splice(Number(p[1]), 1); touch(); render(); };
+  ACT.full = function (a) { if (ro()) return; var p = a.split(':'); var ml = S.rec.meals[p[0]]; var v = Number(p[1]); ml.full = ml.full === v ? null : v; touch(); render(); };
+  ACT.zoom = function (u) { zoom(u); };
+  ACT.addPhoto = function (meal) {
+    pickFile(async function (f) {
+      try { var b = await shrink(f, 1600, 0.85); await addDraftPhoto(meal, b); render(); toast('사진을 붙였어요 · 저장하면 올라가요'); }
+      catch (e) { toast(e.message); }
+    });
+  };
+  async function addDraftPhoto(meal, blob) {
+    var key = uid() + '|' + S.recDate + '|' + meal + '|' + Date.now() + Math.random().toString(36).slice(2, 6);
+    await idb.put(key, blob);
+    S.draftPhotos.push({ key: key, meal: meal, blob: blob, url: URL.createObjectURL(blob) }); touch();
+  }
+  ACT.rmPhoto = async function (a) {
+    var i = a.indexOf(':'), kind = a.slice(0, i), id = a.slice(i + 1);
+    if (kind === 'dr') {
+      await idb.del(id); S.draftPhotos = S.draftPhotos.filter(function (p) { return p.key !== id; });
+    } else {
+      if (!confirm('이 사진을 지울까요?')) return;
+      var p = S.dbPhotos.filter(function (x) { return String(x.id) === id; })[0]; if (!p) return;
+      await sb.storage.from('meal-photos').remove([p.path]);
+      var r = await sb.from('meal_photos').delete().eq('id', p.id);
+      if (r.error) return toast(errMsg(r.error));
+      S.dbPhotos = S.dbPhotos.filter(function (x) { return x !== p; });
+    }
+    render();
+  };
+
+  // 음식 검색
+  ACT.search = function (meal) {
+    var results = [];
+    sheet('<h3>' + MEAL_NAME[meal] + '에 음식 추가</h3><input class="inp" id="fq" placeholder="음식 이름 검색 (예: 닭가슴살)" autocomplete="off" style="margin-top:8px"><div id="fres" style="margin-top:6px"><p class="empty">검색어를 입력해 주세요.</p></div>' +
+      '<button class="btn line" data-act="newFood" data-arg="' + meal + '" style="margin-top:8px">찾는 음식이 없어요 · 직접 등록</button>' +
+      '<p class="tiny mute center" style="margin-top:6px">아르더짐 검수 → 공공데이터 → 유저등록 순으로 보여요. 모든 값은 100g(ml) 기준이에요.</p>');
+    var timer, q = $('#fq'); setTimeout(function () { q.focus(); }, 50);
+    q.addEventListener('input', function () {
+      clearTimeout(timer); var v = q.value.trim();
+      if (!v) { $('#fres').innerHTML = '<p class="empty">검색어를 입력해 주세요.</p>'; return; }
+      timer = setTimeout(async function () {
+        $('#fres').innerHTML = '<p class="empty"><span class="spin"></span></p>';
+        var r = await sb.rpc('search_foods', { q: v, lim: 20 });
+        if (q.value.trim() !== v) return;
+        results = r.data || [];
+        ACT.pickFood = function (i) { var f = results[Number(i)]; amountSheet(meal, foodToItem(f), -1); };
+        $('#fres').innerHTML = results.length ? results.map(function (f, i) {
+          return '<div class="item" data-act="pickFood" data-arg="' + i + '" style="cursor:pointer"><div class="grow"><div>' + esc(f.name) + (f.brand ? ' <span class="tiny mute">' + esc(f.brand) + '</span>' : '') + ' ' + srcBadge(f.source) + '</div>' +
+            '<div class="nut">100' + esc(f.basis_unit || 'g') + ' ' + r0(f.kcal) + 'kcal · 탄' + r1(f.carb) + ' 단' + r1(f.protein) + ' 지' + r1(f.fat) + (f.serving_g ? ' · ' + esc(f.serving_label || '1인분') + ' ' + r0(f.serving_g) + (f.basis_unit || 'g') : '') + '</div></div><span class="mute">›</span></div>';
+        }).join('') : '<p class="empty">검색 결과가 없어요. 아래에서 직접 등록할 수 있어요.</p>';
+      }, 250);
+    });
+  };
+  function foodToItem(f) {
+    return { name: f.name, src: f.source, food_id: f.id, unit: f.basis_unit || 'g', base: 100, amt: n0(f.serving_g) || 100,
+      n: { kcal: n0(f.kcal), carb: n0(f.carb), protein: n0(f.protein), fat: n0(f.fat) }, serving_g: f.serving_g || null, serving_label: f.serving_label || null };
+  }
+  // 양 입력 (새로 추가 idx=-1 / 고치기 idx>=0)
+  function amountSheet(meal, it, idx) {
+    it = JSON.parse(JSON.stringify(it));
+    var quick = '';
+    if (it.unit !== '회') {
+      var sg = n0(it.serving_g);
+      quick = sg ? [0.5, 1, 1.5, 2].map(function (m) { return '<button class="chip" data-act="qAmt" data-arg="' + r0(sg * m) + '">' + (m === 1 ? '' : m + ' × ') + esc(it.serving_label || '1인분') + ' (' + r0(sg * m) + it.unit + ')</button>'; }).join('')
+        : [50, 100, 150, 200].map(function (v) { return '<button class="chip" data-act="qAmt" data-arg="' + v + '">' + v + it.unit + '</button>'; }).join('');
+    } else quick = [0.5, 1, 2].map(function (v) { return '<button class="chip" data-act="qAmt" data-arg="' + v + '">' + v + '회</button>'; }).join('');
+    sheet('<h3>' + esc(it.name) + ' ' + srcBadge(it.src) + '</h3>' +
+      '<p class="nut">' + (it.unit === '회' ? '1회' : '100' + esc(it.unit)) + '당 ' + r0(it.n.kcal) + 'kcal · 탄' + r1(it.n.carb) + ' 단' + r1(it.n.protein) + ' 지' + r1(it.n.fat) + '</p>' +
+      '<div class="chips" style="margin:8px 0">' + quick + '</div>' +
+      '<label class="lbl">먹은 양 (' + esc(it.unit) + ')</label><input class="inp" id="famt" type="number" inputmode="decimal" value="' + r1(it.amt) + '">' +
+      '<p class="small" id="fprev" style="margin:8px 0"></p>' +
+      '<button class="btn" data-act="amtOk">' + (idx < 0 ? MEAL_NAME[meal] + '에 추가' : '바꾸기') + '</button>');
+    var inp = $('#famt');
+    function prev() { it.amt = n0(inp.value); $('#fprev').innerHTML = nutLine(itemN(it)); }
+    inp.addEventListener('input', prev); prev();
+    ACT.qAmt = function (v) { inp.value = v; prev(); };
+    ACT.amtOk = function () {
+      if (!(n0(inp.value) > 0)) return toast('양을 입력해 주세요');
+      it.amt = n0(inp.value);
+      if (idx < 0) S.rec.meals[meal].items.push(it); else S.rec.meals[meal].items[idx] = it;
+      touch(); closeSheet(); render(); toast(idx < 0 ? '추가했어요' : '바꿨어요');
+    };
+  }
+  ACT.editItem = function (a) { if (ro()) return; var p = a.split(':'); amountSheet(p[0], S.rec.meals[p[0]].items[Number(p[1])], Number(p[1])); };
+  ACT.newFood = function (meal) {
+    var unit = 'g';
+    sheet('<h3>음식 직접 등록</h3><p class="small mute">등록한 음식은 다른 회원도 검색해서 쓸 수 있어요(유저등록).</p>' +
+      '<label class="lbl">음식 이름</label><input class="inp" id="nf_name" value="' + esc(($('#fq') || {}).value || '') + '">' +
+      '<label class="lbl">기준</label><div class="seg" id="nf_u"><button class="on" data-act="nfU" data-arg="g">100g 기준</button><button data-act="nfU" data-arg="ml">100ml 기준</button></div>' +
+      '<div class="grid2"><div><label class="lbl">칼로리(kcal)</label><input class="inp" id="nf_k" type="number" inputmode="decimal"></div><div><label class="lbl">탄수화물(g)</label><input class="inp" id="nf_c" type="number" inputmode="decimal"></div>' +
+      '<div><label class="lbl">단백질(g)</label><input class="inp" id="nf_p" type="number" inputmode="decimal"></div><div><label class="lbl">지방(g)</label><input class="inp" id="nf_f" type="number" inputmode="decimal"></div>' +
+      '<div><label class="lbl">1회 양 · 선택</label><input class="inp" id="nf_sg" type="number" inputmode="decimal" placeholder="예) 210"></div><div><label class="lbl">1회 이름 · 선택</label><input class="inp" id="nf_sl" placeholder="예) 1공기"></div></div>' +
+      '<div class="notice">포장 식품은 📷 AI 분석으로 영양성분표를 찍으면 자동으로 채워져요.</div>' +
+      '<button class="btn" data-act="nfSave">등록하고 양 입력</button>');
+    ACT.nfU = function (u, b) { unit = u; $$('#nf_u button').forEach(function (x) { x.classList.toggle('on', x === b); }); };
+    ACT.nfSave = async function () {
+      var name = $('#nf_name').value.trim(); if (!name) return toast('이름을 입력해 주세요');
+      var row = { name: name, source: 'user', basis_unit: unit, kcal: n0($('#nf_k').value), carb: n0($('#nf_c').value), protein: n0($('#nf_p').value), fat: n0($('#nf_f').value),
+        serving_g: nz($('#nf_sg').value), serving_label: $('#nf_sl').value.trim() || null, created_by: uid() };
+      var r = await sb.from('foods').insert(row).select().single();
+      if (r.error) return toast(errMsg(r.error));
+      amountSheet(meal, foodToItem(r.data), -1);
+    };
+  };
+
+  // ---------- AI 사진 분석 ----------
+  ACT.ai = function (meal) {
+    sheet('<h3>📷 사진으로 분석 · ' + MEAL_NAME[meal] + '</h3>' +
+      '<p class="small mute">음식 사진이면 어떤 음식인지 알아내서 <b>음식 DB 값</b>(아르더짐 검수·공공데이터·유저등록)으로 계산해요. <b>영양성분표</b>를 찍으면 표의 숫자를 그대로 넣어요.</p>' +
+      '<label class="lbl">메모 · 선택</label><input class="inp" id="aihint" placeholder="예) 편의점 도시락, 밥은 반 공기만 먹었어요">' +
+      '<div class="grid2" style="margin-top:10px"><button class="btn" data-act="aiPick" data-arg="camera">사진 찍기</button><button class="btn sec" data-act="aiPick" data-arg="album">앨범에서 고르기</button></div>' +
+      '<p class="tiny mute center" style="margin-top:8px">사진 한 장에 음식이 여러 개 있어도 괜찮아요. 결과는 꼭 확인하고 고쳐 주세요.</p>');
+    ACT.aiPick = function (how) {
+      var hint = $('#aihint').value.trim();
+      var i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*'; if (how === 'camera') i.setAttribute('capture', 'environment');
+      i.style.display = 'none'; document.body.appendChild(i);
+      i.addEventListener('change', function () { var f = i.files && i.files[0]; i.remove(); if (f) runAI(meal, f, hint); });
+      i.click();
+    };
+  };
+  async function runAI(meal, file, hint) {
+    var A = { meal: meal, hint: hint };
+    try { A.blob = await shrink(file, 1280, 0.85); } catch (e) { return toast(e.message); }
+    A.url = URL.createObjectURL(A.blob);
+    sheet('<h3>📷 분석 중이에요</h3><img class="aiprev" src="' + A.url + '"><p class="center" style="margin:16px 0"><span class="spin"></span> 사진을 보고 음식을 찾고 있어요…</p>');
+    var b64 = await blobToB64(A.blob);
+    var r = await sb.functions.invoke('analyze-meal', { body: { image: b64, media_type: 'image/jpeg', hint: hint } });
+    if (!$('#ov')) return; // 창을 닫았으면 그만
+    if (r.error) {
+      var code = ''; try { var j = await r.error.context.json(); code = j.error; } catch (e) {}
+      var msg = code === 'ai_limit' ? '오늘 AI 분석 횟수를 모두 썼어요. 내일 다시 쓸 수 있어요.' :
+        code === 'login' ? '로그인이 만료됐어요. 다시 로그인해 주세요.' :
+        code === 'no_api_key' ? 'AI 키가 아직 설정되지 않았어요. 관리자에게 알려 주세요.' : '분석에 실패했어요. 잠시 후 다시 해 보거나 음식 검색으로 넣어 주세요.';
+      return sheet('<h3>📷 분석 결과</h3><img class="aiprev" src="' + A.url + '"><div class="card small" style="color:var(--bad)">' + msg + '</div><button class="btn sec" data-act="search" data-arg="' + meal + '">음식 검색으로 넣기</button>');
+    }
+    var d = r.data || {};
+    A.kind = d.kind; A.items = d.items || []; A.label_food = d.label_food || null; A.note = d.note; A.remaining = d.remaining;
+    A.attach = d.kind === 'food'; A.reg = !!d.label_food;
+    renderAI(A);
+  }
+  function renderAI(A) {
+    var h = '<h3>📷 분석 결과 · ' + MEAL_NAME[A.meal] + '</h3><img class="aiprev" src="' + A.url + '">';
+    if (A.kind === 'label' && A.items.length) {
+      var it = A.items[0];
+      h += '<div class="notice" style="background:#E6F1E4">✅ 영양성분표를 읽었어요. 표의 숫자를 그대로 넣었어요.</div>' +
+        '<div class="aiitem"><label class="lbl">제품 이름</label><input class="inp" data-ain="name:0" value="' + esc(it.name) + '">' +
+        '<p class="nut" style="margin:6px 0">' + (it.unit === '회' ? '1회(' + esc(it.serving_label || '') + ')' : '100' + it.unit) + '당 ' + r0(it.n.kcal) + 'kcal · 탄' + r1(it.n.carb) + ' 단' + r1(it.n.protein) + ' 지' + r1(it.n.fat) + '</p>' +
+        '<label class="lbl">먹은 양 (' + esc(it.unit) + ')' + (it.serving_label ? ' · 기본값: ' + esc(it.serving_label) : '') + '</label><input class="inp" type="number" inputmode="decimal" data-ain="amt:0" value="' + r1(it.amt) + '">' +
+        '<p class="small" id="ain0" style="margin:6px 0 0">' + nutLine(itemN(it)) + '</p></div>';
+      if (A.label_food) h += '<label class="chk"><input type="checkbox" id="ai_reg"' + (A.reg ? ' checked' : '') + '><span>음식 DB에 <b>유저등록</b>으로 저장해서 다음엔 검색으로 바로 넣기</span></label>';
+    } else if (A.kind === 'food' && A.items.length) {
+      h += '<div class="notice">AI가 알아본 음식을 <b>음식 DB</b>에서 찾아 계산했어요. 음식과 양이 맞는지 확인해 주세요.</div>';
+      A.items.forEach(function (it, i) {
+        var cands = it.candidates || [];
+        h += '<div class="aiitem"><div class="row between"><span class="small mute">AI가 본 음식: <b style="color:var(--ink)">' + esc(it.ai_name || it.name) + '</b>' + (it.confidence != null && it.confidence < 0.5 ? ' <span class="badge warn">확실하지 않아요</span>' : '') + '</span><button class="x" data-act="aiRm" data-arg="' + i + '">×</button></div>' +
+          '<select class="inp" data-aisel="' + i + '" style="margin-top:6px">' + cands.map(function (c, j) {
+            var sel = c.src === it.src && c.food_id === it.food_id && c.name === it.name;
+            return '<option value="' + j + '"' + (sel ? ' selected' : '') + '>' + esc(c.name) + ' · ' + (SRC[c.src] || [c.src])[0] + ' · ' + r0(c.n.kcal) + 'kcal/100' + esc(c.unit) + '</option>';
+          }).join('') + '</select>' +
+          (it.src === 'ai' ? '<p class="tiny" style="color:var(--warn);margin:4px 0 0">음식 DB에 없어 AI 추정값이에요. 비슷한 음식을 검색해서 넣으면 더 정확해요.</p>' : '') +
+          '<div class="row" style="margin-top:6px"><input class="inp" style="width:110px" type="number" inputmode="decimal" data-ain="amt:' + i + '" value="' + r0(it.amt) + '"><span class="small">' + esc(it.unit) + '</span><span class="grow"></span></div>' +
+          '<p class="small" id="ain' + i + '" style="margin:6px 0 0">' + nutLine(itemN(it)) + '</p></div>';
+      });
+      h += '<p class="small" id="aitot"><b>합계</b> ' + nutLine(sumN(A.items)) + '</p>';
+    } else {
+      h += '<div class="card small">' + esc(A.note || '음식이나 영양성분표를 찾지 못했어요.') + ' 다른 사진으로 다시 해 보거나 음식 검색으로 넣어 주세요.</div>' +
+        '<button class="btn sec" data-act="search" data-arg="' + A.meal + '">음식 검색으로 넣기</button>';
+      if (A.remaining != null) h += '<p class="tiny mute center">오늘 남은 AI 분석 ' + A.remaining + '회</p>';
+      sheet(h); return;
+    }
+    if (A.note) h += '<p class="tiny mute">AI 메모: ' + esc(A.note) + '</p>';
+    h += '<label class="chk"><input type="checkbox" id="ai_att"' + (A.attach ? ' checked' : '') + '>이 사진을 ' + MEAL_NAME[A.meal] + ' 사진으로도 첨부 (트레이너 확인용)</label>' +
+      '<button class="btn" data-act="aiAdd"' + (A.items.length ? '' : ' disabled') + '>' + MEAL_NAME[A.meal] + '에 추가하기</button>' +
+      (A.remaining != null ? '<p class="tiny mute center" style="margin-top:6px">AI 결과는 추정이에요 · 오늘 남은 AI 분석 ' + A.remaining + '회</p>' : '');
+    var el = sheet(h);
+    el.addEventListener('input', function (e) {
+      var a = e.target.getAttribute('data-ain'); if (!a) return;
+      var p = a.split(':'), it = A.items[Number(p[1])];
+      if (p[0] === 'name') it.name = e.target.value;
+      else { it.amt = n0(e.target.value); var o = $('#ain' + p[1]); if (o) o.innerHTML = nutLine(itemN(it)); var tt = $('#aitot'); if (tt) tt.innerHTML = '<b>합계</b> ' + nutLine(sumN(A.items)); }
+    });
+    el.addEventListener('change', function (e) {
+      var s = e.target.getAttribute('data-aisel'); if (s == null) { if (e.target.id === 'ai_reg') A.reg = e.target.checked; if (e.target.id === 'ai_att') A.attach = e.target.checked; return; }
+      var it = A.items[Number(s)], c = it.candidates[Number(e.target.value)];
+      var keep = { ai_name: it.ai_name, confidence: it.confidence, candidates: it.candidates, amt: it.amt };
+      A.items[Number(s)] = Object.assign({}, c, keep);
+      renderAI(A);
+    });
+    ACT.aiRm = function (i) { A.items.splice(Number(i), 1); renderAI(A); };
+    ACT.aiAdd = async function () {
+      var btn = $('[data-act="aiAdd"]'); btn.disabled = true;
+      if (A.kind === 'label' && A.reg && A.label_food) {
+        var lf = Object.assign({}, A.label_food, { name: A.items[0].name || A.label_food.name, created_by: uid() });
+        var r = await sb.from('foods').insert(lf).select().single();
+        if (!r.error && r.data) A.items[0].food_id = r.data.id; else if (r.error) toast('음식 DB 등록은 못 했어요: ' + errMsg(r.error));
+      }
+      A.items.forEach(function (it) {
+        if (!(n0(it.amt) > 0)) return;
+        S.rec.meals[A.meal].items.push({ name: it.name, src: it.src, food_id: it.food_id || null, unit: it.unit, base: it.base, amt: n0(it.amt), n: it.n,
+          serving_g: it.serving_g || null, serving_label: it.serving_label || null, via: 'ai' });
+      });
+      if (A.attach) await addDraftPhoto(A.meal, A.blob);
+      touch(); closeSheet(); render(); toast('추가했어요 · 저장하기를 눌러 주세요');
+    };
+  }
+
+  // ---------- 운동 ----------
+  function vWork() {
+    var rec = S.rec;
+    var h = '<div class="card"><h3>' + dayTitle() + ' 운동</h3><div class="seg" style="margin-top:8px">' +
+      [['pt', 'PT'], ['self', '개인운동'], ['rest', '쉬는 날']].map(function (x) { return '<button data-act="trained" data-arg="' + x[0] + '" class="' + (rec.trained === x[0] ? 'on' : '') + '"' + dis() + '>' + x[1] + '</button>'; }).join('') + '</div></div>';
+    if (rec.trained && rec.trained !== 'rest') {
+      h += '<div class="card"><div class="wrow head"><span style="text-align:left">운동</span><span>무게(kg)</span><span>갯수</span><span>세트</span><span></span></div>';
+      if (!rec.workouts.length) h += '<p class="small mute">아래 버튼으로 운동을 추가해 주세요.</p>';
+      rec.workouts.forEach(function (w, i) {
+        h += '<div class="wrow"><div class="nm">' + esc(w.name) + '<div class="tiny mute">' + esc(w.part || '') + '</div></div>' +
+          '<input class="inp" type="number" inputmode="decimal" data-w="' + i + ':w" value="' + (w.w == null ? '' : esc(w.w)) + '"' + dis() + '>' +
+          '<input class="inp" type="number" inputmode="numeric" data-w="' + i + ':reps" value="' + (w.reps == null ? '' : esc(w.reps)) + '" placeholder="' + (w.part === '유산소' ? '분' : '') + '"' + dis() + '>' +
+          '<input class="inp" type="number" inputmode="numeric" data-w="' + i + ':sets" value="' + (w.sets == null ? '' : esc(w.sets)) + '"' + dis() + '>' +
+          (ro() ? '<span></span>' : '<button class="x" data-act="rmW" data-arg="' + i + '">×</button>') + '</div>';
+      });
+      if (!ro()) h += '<button class="btn sec" data-act="addW" style="margin-top:8px">＋ 운동 추가</button>';
+      h += '</div>';
+    }
+    return h + saveBar();
+  }
+  ACT.trained = function (v) { if (ro()) return; S.rec.trained = S.rec.trained === v ? null : v; touch(); render(); };
+  ACT.rmW = function (i) { S.rec.workouts.splice(Number(i), 1); touch(); render(); };
+  ACT.addW = function () {
+    var part = '전체';
+    sheet('<h3>운동 추가</h3><input class="inp" id="wq" placeholder="운동 이름 또는 초성 (예: ㅅㅋㅌ)" autocomplete="off" style="margin-top:8px">' +
+      '<div class="chips" id="wparts" style="margin:8px 0">' + ['전체'].concat(Object.keys(EXERCISES)).map(function (p) { return '<button class="chip' + (p === part ? ' on' : '') + '" data-act="wPart" data-arg="' + p + '">' + p + '</button>'; }).join('') + '</div>' +
+      '<div id="wlist"></div>', function () { render(); });
+    function list() {
+      var q = $('#wq').value.trim(), out = [];
+      Object.keys(EXERCISES).forEach(function (p) { if (part !== '전체' && p !== part) return; EXERCISES[p].forEach(function (n) { if (matchQ(n, q)) out.push([p, n]); }); });
+      var h = out.map(function (x) { return '<div class="item" data-act="wPick" data-arg="' + esc(x[0] + '|' + x[1]) + '" style="cursor:pointer"><span class="grow">' + esc(x[1]) + '</span><span class="tiny mute">' + esc(x[0]) + '</span><span style="color:var(--brown)">＋</span></div>'; }).join('');
+      if (q && /[가-힣a-zA-Z0-9]/.test(q) && !out.some(function (x) { return x[1] === q; })) h += '<div class="item" data-act="wPick" data-arg="' + esc((part === '전체' ? '' : part) + '|' + q) + '" style="cursor:pointer"><span class="grow">‘' + esc(q) + '’ 직접 추가</span><span style="color:var(--brown)">＋</span></div>';
+      $('#wlist').innerHTML = h || '<p class="empty">찾는 운동이 없어요.</p>';
+    }
+    $('#wq').addEventListener('input', list); list();
+    ACT.wPart = function (p, b) { part = p; $$('#wparts .chip').forEach(function (x) { x.classList.toggle('on', x === b); }); list(); };
+    ACT.wPick = function (a) {
+      var p = a.split('|'); var last = null;
+      S.rec.workouts.forEach(function (w) { if (w.name === p[1]) last = w; });
+      S.rec.workouts.push({ name: p[1], part: p[0] || '', w: last ? last.w : null, reps: last ? last.reps : null, sets: last ? last.sets : null });
+      touch(); toast(p[1] + ' 추가했어요');
+    };
+  };
+
+  // ---------- 컨디션 ----------
+  function vCond() {
+    var rec = S.rec, h = '';
+    Object.keys(SCALES).forEach(function (k) {
+      var sc = SCALES[k];
+      h += '<div class="card"><h3>' + sc[0] + '</h3><div class="faces" style="margin-top:8px">' + FACES.map(function (f, i) {
+        return '<button data-act="face" data-arg="' + k + ':' + (i + 1) + '" class="' + (rec[k] === i + 1 ? 'on' : '') + '"' + dis() + '>' + f + '<small>' + sc[1][i] + '</small></button>';
+      }).join('') + '</div></div>';
+    });
+    var pm = {}; rec.pain.forEach(function (p) { var s = String(p).split(':'); pm[s[0]] = s[1] || '약'; });
+    h += '<div class="card"><h3>통증</h3><p class="small mute">아픈 부위를 누를 때마다 약 → 중 → 강 → 없음으로 바뀌어요.</p><div class="chips">' + PAIN_PARTS.map(function (p) {
+      var l = pm[p], cls = l ? ' l' + PAIN_LV.indexOf(l) : '';
+      return '<button class="chip' + cls + '" data-act="pain" data-arg="' + p + '"' + dis() + '>' + p + (l ? ' · ' + l : '') + '</button>';
+    }).join('') + '</div>' + (rec.pain.length ? '' : '<p class="small mute" style="margin:8px 0 0">아픈 곳이 없으면 그대로 두세요.</p>') + '</div>';
+    return h + saveBar();
+  }
+  ACT.face = function (a) { if (ro()) return; var p = a.split(':'), v = Number(p[1]); S.rec[p[0]] = S.rec[p[0]] === v ? null : v; touch(); render(); };
+  ACT.pain = function (part) {
+    if (ro()) return;
+    var cur = null, rest = [];
+    S.rec.pain.forEach(function (p) { var s = String(p).split(':'); if (s[0] === part) cur = s[1] || '약'; else rest.push(p); });
+    var next = cur === null ? '약' : cur === '약' ? '중' : cur === '중' ? '강' : null;
+    if (next) rest.push(part + ':' + next);
+    S.rec.pain = rest; touch(); render();
+  };
+
+  // ---------- 오늘 기록 ----------
+  function vBody() {
+    var rec = S.rec;
+    function f(k, l, u, req, ph) { return '<div><label class="lbl">' + l + (req ? ' <span style="color:var(--bad)">*</span>' : '') + '</label><div class="row"><input class="inp" type="number" inputmode="decimal" data-f="' + k + '" value="' + (rec[k] == null ? '' : esc(rec[k])) + '" placeholder="' + (ph || '') + '"' + dis() + '><span class="small mute">' + u + '</span></div></div>'; }
+    return '<div class="card"><h3>' + dayTitle() + ' 기록</h3><p class="small mute">체중과 수면은 꼭 넣어 주세요.</p><div class="grid2">' +
+      f('weight', '체중', 'kg', 1, '아침 공복') + f('sleep', '수면', '시간', 1, '예) 6.5') + '</div></div>' +
+      '<div class="card"><h3>선택</h3><div class="grid2">' + f('steps', '걸음 수', '보', 0) + f('water', '물', 'L', 0, '예) 1.5') + '</div>' +
+      '<p class="small mute" style="margin:12px 0 0">인바디를 잰 날만 넣어요</p><div class="grid2">' + f('muscle', '골격근량', 'kg', 0) + f('body_fat', '체지방률', '%', 0) + '</div></div>' + saveBar();
+  }
+
+  // ---------- 설정 ----------
+  function vSettings() {
+    var me = S.me;
+    return '<div class="row" style="margin:6px 0"><button class="btn sm line" data-act="tab" data-arg="home">‹ 돌아가기</button><h2 style="margin-left:6px">설정</h2></div>' +
+      '<div class="card"><h3>내 정보</h3><div class="item"><span class="grow mute">아이디</span><span>' + esc(me.login_id) + '</span></div>' +
+      '<div class="item"><span class="grow mute">이름</span><span>' + esc(me.name) + '</span></div><div class="item"><span class="grow mute">지점</span><span>' + esc(me.branch) + '점</span></div>' +
+      '<div class="item"><span class="grow mute">담당 트레이너</span><span>' + (S.trainer ? esc(S.trainer.name) + ' 선생님' : '아직 지정 전') + '</span></div></div>' +
+      '<div class="card"><div class="row between"><h3>내 목표</h3><button class="btn sm sec" data-act="editGoal">수정하기</button></div><div style="margin-top:8px">' + goalSummary(me.goal) + '</div></div>' +
+      '<div class="card small"><h3>개인정보 안내</h3><p class="mute" style="margin:6px 0 0">체중·컨디션·통증·식단 사진은 건강 정보예요. 담당 트레이너와 관리자만 볼 수 있어요. 식단 사진의 AI 분석은 사진을 분석 서버로 보내 결과만 받아 오고, 사진은 식단에 첨부할 때만 저장돼요.</p></div>' +
+      '<button class="btn sec" data-act="logout">로그아웃</button><p class="center tiny mute" style="margin-top:14px">ARDOR 회원 체크 v1</p>';
+  }
+  ACT.editGoal = function () {
+    goalSheet(S.me.goal, '내 목표 수정', async function (g) {
+      var r = await sb.from('profiles').update({ goal: g }).eq('id', uid());
+      if (r.error) throw r.error;
+      S.me.goal = g; render();
+    });
+  };
+
+  // ---------- 가입 설문 ----------
+  function renderIntake() {
+    app.innerHTML = '<div class="hdr"><span class="logo">ARDOR</span><button class="btn sm line" data-act="logout">로그아웃</button></div><div class="page">' +
+      '<h2 style="margin:8px 0">반가워요, ' + esc(S.me.name) + '님</h2><p class="small mute">담당 선생님이 참고할 수 있게 몇 가지만 알려 주세요.</p>' +
+      '<div class="card"><label class="lbl">운동 목표</label><select class="inp" id="iq_goal"><option>체중 감량</option><option>근육량 증가</option><option>체력·건강</option><option>통증·자세 개선</option><option>기타</option></select>' +
+      '<label class="lbl">운동 경험</label><select class="inp" id="iq_exp"><option>처음이에요</option><option>1년 미만</option><option>1~3년</option><option>3년 이상</option></select>' +
+      '<label class="lbl">하루 활동량</label><select class="inp" id="iq_act"><option>주로 앉아 있어요</option><option>보통이에요</option><option>많이 움직여요</option></select>' +
+      '<label class="lbl">다쳤던 곳·통증 이력 · 선택</label><textarea class="inp" id="iq_inj" placeholder="예) 허리 디스크, 무릎 수술"></textarea>' +
+      '<label class="lbl">앓고 있는 질환·먹는 약 · 선택</label><textarea class="inp" id="iq_med"></textarea></div>' +
+      '<button class="btn" data-act="intakeSave">시작하기</button></div>';
+  }
+  ACT.intakeSave = async function () {
+    var a = { goal: $('#iq_goal').value, exp: $('#iq_exp').value, activity: $('#iq_act').value, injury: $('#iq_inj').value.trim(), medical: $('#iq_med').value.trim() };
+    var r = await sb.from('intake').insert({ member_id: uid(), answers: a });
+    if (r.error) return toast(errMsg(r.error));
+    start();
+  };
+
+  // ---------- 저장 ----------
+  ACT.save = async function () {
+    if (ro()) return toast('7일이 지난 기록은 고칠 수 없어요');
+    var btn = $('[data-act="save"]'); if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spin"></span>'; }
+    var rec = S.rec, d = S.recDate;
+    var row = {
+      member_id: uid(), record_date: d,
+      status: rec.weight != null && rec.sleep != null ? 'submitted' : 'draft',
+      weight: rec.weight, sleep: rec.sleep, steps: rec.steps, water: rec.water, muscle: rec.muscle, body_fat: rec.body_fat,
+      trained: rec.trained, workouts: rec.workouts, cond: rec.cond, fatigue: rec.fatigue, stress: rec.stress,
+      pain: rec.pain, pain_level: maxPain(rec.pain), meals: rec.meals, tot: dayTot(rec), goal: S.me.goal || null,
+      updated_at: new Date().toISOString()
+    };
+    var r = await sb.from('daily_records').upsert(row, { onConflict: 'member_id,record_date' });
+    if (r.error) { toast(errMsg(r.error)); if (btn) { btn.disabled = false; btn.textContent = '저장하기'; } return; }
+    var failed = 0;
+    for (var i = 0; i < S.draftPhotos.length; i++) {
+      var p = S.draftPhotos[i];
+      var path = uid() + '/' + d + '/' + p.meal + '-' + Date.now() + '-' + i + '.jpg';
+      var up = await sb.storage.from('meal-photos').upload(path, p.blob, { contentType: 'image/jpeg', upsert: false });
+      if (up.error) { failed++; continue; }
+      var ins = await sb.from('meal_photos').insert({ member_id: uid(), record_date: d, meal: p.meal, path: path });
+      if (ins.error) { failed++; continue; }
+      await idb.del(p.key); p.done = true;
+    }
+    S.draftPhotos = S.draftPhotos.filter(function (p) { return !p.done; });
+    if (d === todayKey()) localStorage.removeItem(draftKey(d));
+    var keepTab = S.tab;
+    await loadHist(); await openDate(d); S.tab = keepTab;
+    render();
+    toast(failed ? '기록은 저장했지만 사진 ' + failed + '장은 못 올렸어요. 다시 저장해 주세요.' : '저장했어요');
+  };
+
+  // ---------- 탭·날짜 ----------
+  ACT.tab = function (t) { S.tab = t; render(); window.scrollTo(0, 0); };
+  ACT.pickDate = async function (d) {
+    if (d === S.recDate) return;
+    if (S.dirty && S.recDate !== todayKey() && canEdit(S.recDate)) {
+      if (confirm(md(S.recDate) + ' 기록을 저장하지 않았어요. 저장할까요?')) { await ACT.save(); }
+    }
+    await openDate(d); render();
+  };
+
+  // 입력칸 (다시 그리지 않고 값만 반영)
+  app.addEventListener('input', function (e) {
+    if (!S.me || STAFF_SITE || !S.rec) return;
+    var t = e.target, a;
+    if ((a = t.getAttribute('data-f'))) { S.rec[a] = nz(t.value); touch(); }
+    else if ((a = t.getAttribute('data-memo'))) { S.rec.meals[a].memo = t.value; touch(); }
+    else if ((a = t.getAttribute('data-w'))) { var p = a.split(':'); S.rec.workouts[Number(p[0])][p[1]] = nz(t.value); touch(); }
+  });
+  window.addEventListener('beforeunload', function () { if (S.rec && S.me && !STAFF_SITE) saveDraft(); });
+
+  return { start: start };
+})();
+
+// ================= 직원·관리자 화면 =================
+var Staff = (function () {
+  var T = { sub: 'members', kpi: null, scope: 'all', branch: 'all', members: [], staff: [], applicants: [], today: {}, detail: null, inviteLink: null };
+  var isAdmin = function () { return S.me.role === 'admin'; };
+  var nameOf = function (id) { var x = T.staff.filter(function (s) { return s.id === id; })[0]; return x ? x.name : ''; };
+
+  async function start() {
+    app.className = 'wide';
+    T.branch = isAdmin() ? 'all' : S.me.branch; T.sub = 'members'; T.detail = null; T.kpi = null; T.scope = 'all'; T.inviteLink = null;
+    await loadAll(); render();
+  }
+  async function loadAll() {
+    var p = await sb.from('profiles').select('*').order('name', { ascending: true });
+    var all = p.data || [];
+    T.members = all.filter(function (x) { return x.role === 'member'; });
+    T.staff = all.filter(function (x) { return x.role === 'staff' || x.role === 'admin'; });
+    T.applicants = all.filter(function (x) { return x.role === 'applicant'; });
+    T.today = {};
+    var ids = T.members.map(function (m) { return m.id; });
+    if (ids.length) {
+      var r = await sb.from('daily_records').select('member_id,record_date,status,weight,sleep,pain,pain_level,tot,cond,trained').in('member_id', ids).eq('record_date', todayKey());
+      (r.data || []).forEach(function (x) { T.today[x.member_id] = x; });
+    }
+  }
+  function flags(m) {
+    var r = T.today[m.id], g = m.goal || {};
+    var submitted = !!(r && r.status === 'submitted');
+    var pain = r && r.pain_level ? r.pain_level : 0;
+    var pShort = !!(r && g.protein && r.tot && n0(r.tot.kcal) > 0 && n0(r.tot.protein) < g.protein * 0.8);
+    return { r: r, submitted: submitted, pain: pain, pShort: pShort, score: (submitted ? 0 : 1) + pain * 2 + (pShort ? 2 : 0) };
+  }
+  function scoped() {
+    return T.members.filter(function (m) {
+      if (isAdmin() && T.branch !== 'all' && m.branch !== T.branch) return false;
+      if (T.scope === 'mine' && m.trainer_id !== S.me.id) return false;
+      if (T.scope === 'none' && m.trainer_id) return false;
+      return true;
+    });
+  }
+
+  function render() {
+    if (T.detail) return renderDetail();
+    var h = '<div class="hdr"><span class="logo">ARDOR <span class="tiny" style="letter-spacing:.1em">STAFF</span></span><div class="row"><span class="small mute">' + esc(S.me.name) + (isAdmin() ? ' · 관리자' : ' · ' + esc(S.me.branch) + '점') + '</span><button class="btn sm line" data-act="logout">로그아웃</button></div></div><div class="page" style="padding-bottom:40px">';
+    var subs = [['members', '회원'], ['invite', '초대']]; if (isAdmin()) subs.push(['approve', '직원 승인' + (T.applicants.length ? ' (' + T.applicants.length + ')' : '')], ['settings', '설정']);
+    h += '<div class="seg" style="margin:4px 0 10px">' + subs.map(function (s) { return '<button data-act="sSub" data-arg="' + s[0] + '" class="' + (T.sub === s[0] ? 'on' : '') + '">' + s[1] + '</button>'; }).join('') + '</div>';
+    h += ({ members: vMembers, invite: vInvite, approve: vApprove, settings: vSettings }[T.sub])();
+    app.innerHTML = h + '</div>';
+    if (T.sub === 'settings') loadSettings();
+  }
+  ACT.sSub = function (s) { T.sub = s; T.inviteLink = null; render(); };
+
+  // ---------- 회원 목록 ----------
+  function vMembers() {
+    var list = scoped(), h = '';
+    if (isAdmin()) h += '<div class="chips" style="margin-bottom:6px">' + [['all', '전체 지점'], ['망포', '망포점'], ['서천', '서천점']].map(function (b) { return '<button class="chip' + (T.branch === b[0] ? ' on' : '') + '" data-act="sBranch" data-arg="' + b[0] + '">' + b[1] + '</button>'; }).join('') + '</div>';
+    h += '<div class="chips" style="margin-bottom:10px">' + [['all', '전체'], ['mine', '내 회원'], ['none', '담당 미지정']].map(function (s) { return '<button class="chip' + (T.scope === s[0] ? ' on' : '') + '" data-act="sScope" data-arg="' + s[0] + '">' + s[1] + '</button>'; }).join('') + '</div>';
+    var F = list.map(function (m) { return { m: m, f: flags(m) }; });
+    var c = { sub: 0, miss: 0, pain: 0, prot: 0 };
+    F.forEach(function (x) { if (x.f.submitted) c.sub++; else c.miss++; if (x.f.pain) c.pain++; if (x.f.pShort) c.prot++; });
+    h += '<h3 style="margin:4px 0 6px">오늘 회원 현황 <span class="small mute">' + md(todayKey()) + '(' + wd(todayKey()) + ')</span></h3><div class="kpis">' +
+      [['sub', '제출', c.sub], ['miss', '미체크', c.miss], ['pain', '통증', c.pain], ['prot', '단백질 부족', c.prot]].map(function (k) {
+        return '<div class="kpi' + (T.kpi === k[0] ? ' on' : '') + '" data-act="sKpi" data-arg="' + k[0] + '"><b>' + k[2] + '</b><span>' + k[1] + '</span></div>';
+      }).join('') + '</div>';
+    if (T.kpi) F = F.filter(function (x) { return T.kpi === 'sub' ? x.f.submitted : T.kpi === 'miss' ? !x.f.submitted : T.kpi === 'pain' ? x.f.pain : x.f.pShort; });
+    F.sort(function (a, b) { return b.f.score - a.f.score || String(a.m.name).localeCompare(b.m.name); });
+    h += '<div style="margin-top:10px">' + (F.length ? F.map(function (x) {
+      var m = x.m, f = x.f, tags = '';
+      tags += f.submitted ? '<span class="badge ok">제출</span>' : '<span class="badge">미체크</span>';
+      if (f.pain) tags += ' <span class="badge ' + (f.pain >= 3 ? 'bad' : 'warn') + '">통증 ' + PAIN_LV[f.pain] + '</span>';
+      if (f.pShort) tags += ' <span class="badge warn">단백질 부족</span>';
+      return '<div class="mrow" data-act="sOpen" data-arg="' + m.id + '"><div class="av">' + esc((m.name || '?').slice(0, 1)) + '</div><div class="grow"><div><b>' + esc(m.name) + '</b> <span class="tiny mute">' + esc(m.login_id) + (isAdmin() ? ' · ' + esc(m.branch) : '') + '</span></div>' +
+        '<div class="tiny mute">담당 ' + (m.trainer_id ? esc(nameOf(m.trainer_id) || '-') : '<span style="color:var(--warn)">미지정</span>') + '</div></div><div style="text-align:right">' + tags + '</div></div>';
+    }).join('') : '<p class="empty">해당하는 회원이 없어요.</p>') + '</div>';
+    h += '<p class="notice">회원 건강 정보(체중·통증·식단 사진)는 담당 업무에만 써 주세요. 캡처·공유는 하지 않아요.</p>';
+    return h;
+  }
+  ACT.sBranch = function (b) { T.branch = b; render(); };
+  ACT.sScope = function (s) { T.scope = s; render(); };
+  ACT.sKpi = function (k) { T.kpi = T.kpi === k ? null : k; render(); };
+
+  // ---------- 회원 상세 ----------
+  ACT.sOpen = async function (id) {
+    var m = T.members.filter(function (x) { return x.id === id; })[0]; if (!m) return;
+    app.innerHTML = '<div class="page center" style="padding-top:60px"><span class="spin"></span></div>';
+    var from = addDays(todayKey(), -13);
+    var res = await Promise.all([
+      sb.from('daily_records').select('*').eq('member_id', id).gte('record_date', from).order('record_date', { ascending: true }),
+      sb.from('feedback').select('*').eq('member_id', id).gte('record_date', from).order('created_at', { ascending: true }),
+      sb.from('intake').select('*').eq('member_id', id).maybeSingle()
+    ]);
+    var recs = {}; (res[0].data || []).forEach(function (r) { recs[r.record_date] = r; });
+    T.detail = { m: m, recs: recs, fb: res[1].data || [], intake: res[2].data, date: todayKey(), photos: [] };
+    await loadPhotos(); renderDetail(); window.scrollTo(0, 0);
+  };
+  async function loadPhotos() {
+    var D = T.detail;
+    var ph = await sb.from('meal_photos').select('*').eq('member_id', D.m.id).eq('record_date', D.date).order('created_at', { ascending: true });
+    D.photos = ph.data || [];
+    if (D.photos.length) {
+      var su = await sb.storage.from('meal-photos').createSignedUrls(D.photos.map(function (p) { return p.path; }), 3600);
+      (su.data || []).forEach(function (x, i) { D.photos[i].url = x.signedUrl; });
+    }
+  }
+  ACT.sBack = async function () { T.detail = null; await loadAll(); render(); };
+  ACT.sDay = async function (d) { T.detail.date = d; await loadPhotos(); renderDetail(); };
+
+  function trend(D) {
+    var days = []; for (var i = 6; i >= 0; i--) days.push(addDays(todayKey(), -i));
+    var g = D.m.goal || {};
+    var W = 340, H = 120, pad = 20, bw = (W - pad * 2) / 7;
+    var kc = days.map(function (d) { var r = D.recs[d]; return r && r.tot ? n0(r.tot.kcal) : 0; });
+    var ws = days.map(function (d) { var r = D.recs[d]; return r && r.weight != null ? Number(r.weight) : null; });
+    var kmax = Math.max.apply(null, kc.concat([g.kcal || 0, 1])) * 1.25;
+    var wv = ws.filter(function (x) { return x != null; }), wmn = Math.min.apply(null, wv) - 0.5, wmx = Math.max.apply(null, wv) + 0.5;
+    var s = '<svg viewBox="0 0 ' + W + ' ' + (H + 18) + '" style="width:100%;height:auto">';
+    kc.forEach(function (k, i) { var h = k / kmax * (H - 30); s += '<rect x="' + (pad + i * bw + 6) + '" y="' + (H - h) + '" width="' + (bw - 12) + '" height="' + h + '" rx="3" fill="#F1E3D6"/>' + (k ? '<text x="' + (pad + i * bw + bw / 2) + '" y="' + (H - h - 3) + '" text-anchor="middle" font-size="9" fill="#8C7B6E">' + r0(k) + '</text>' : ''); });
+    if (g.kcal) { var gy = H - g.kcal / kmax * (H - 30); s += '<line x1="' + pad + '" x2="' + (W - pad) + '" y1="' + gy + '" y2="' + gy + '" stroke="#C9822B" stroke-dasharray="3 3"/>'; }
+    if (wv.length) {
+      var pts = []; ws.forEach(function (w, i) { if (w != null) pts.push([pad + i * bw + bw / 2, 10 + (wmx - w) / (wmx - wmn) * (H - 50), w]); });
+      s += '<path d="' + pts.map(function (p, i) { return (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' ') + '" fill="none" stroke="#955C3E" stroke-width="2"/>';
+      pts.forEach(function (p) { s += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="3" fill="#955C3E"/><text x="' + p[0] + '" y="' + (p[1] - 6) + '" text-anchor="middle" font-size="9.5" fill="#3B2A20">' + p[2] + '</text>'; });
+    }
+    days.forEach(function (d, i) { s += '<text x="' + (pad + i * bw + bw / 2) + '" y="' + (H + 14) + '" text-anchor="middle" font-size="10" fill="#8C7B6E">' + md(d) + '</text>'; });
+    s += '</svg><div class="tiny mute">선: 체중(kg) · 막대: 섭취 칼로리' + (g.kcal ? ' · 점선: 목표 ' + g.kcal + 'kcal' : '') + '</div>';
+    var rows = [['단백질', function (r) { return r && r.tot && r.tot.kcal ? r0(r.tot.protein) + 'g' : '-'; }], ['수면', function (r) { return r && r.sleep != null ? r.sleep + 'h' : '-'; }],
+      ['컨디션', function (r) { return r && r.cond ? FACES[r.cond - 1] : '-'; }], ['통증', function (r) { return r && r.pain_level ? PAIN_LV[r.pain_level] : '-'; }]];
+    s += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:6px;text-align:center"><tr><td></td>' + days.map(function (d) { return '<td class="mute">' + md(d) + '</td>'; }).join('') + '</tr>' +
+      rows.map(function (row) { return '<tr><td class="mute" style="text-align:left;white-space:nowrap">' + row[0] + '</td>' + days.map(function (d) { return '<td style="padding:3px 0">' + row[1](D.recs[d]) + '</td>'; }).join('') + '</tr>'; }).join('') + '</table></div>';
+    return s;
+  }
+
+  function renderDetail() {
+    var D = T.detail, m = D.m, d = D.date, r = D.recs[d], g = m.goal || {};
+    var h = '<div class="hdr"><button class="btn sm line" data-act="sBack">‹ 목록</button><span class="small mute">' + esc(S.me.name) + '</span></div><div class="page" style="padding-bottom:40px">';
+    h += '<div class="row" style="margin:4px 0 8px"><div class="av">' + esc((m.name || '?').slice(0, 1)) + '</div><div class="grow"><h2>' + esc(m.name) + '</h2><div class="tiny mute">' + esc(m.login_id) + ' · ' + esc(m.branch) + '점 · 담당 ' + (m.trainer_id ? esc(nameOf(m.trainer_id)) : '미지정') + '</div></div></div>';
+    // 담당
+    h += '<div class="row wrap" style="gap:6px">';
+    if (isAdmin()) {
+      h += '<select class="inp" id="s_tr" style="width:auto;flex:1"><option value="">담당 미지정</option>' + T.staff.map(function (s) { return '<option value="' + s.id + '"' + (m.trainer_id === s.id ? ' selected' : '') + '>' + esc(s.name) + ' (' + esc(s.branch) + ')</option>'; }).join('') + '</select><button class="btn sm" data-act="sAssignSel">담당 저장</button>';
+    } else if (!m.trainer_id) h += '<button class="btn sm" data-act="sAssign" data-arg="me">내 회원으로 지정</button>';
+    else if (m.trainer_id === S.me.id) h += '<button class="btn sm line" data-act="sAssign" data-arg="none">담당 해제</button>';
+    h += '<button class="btn sm sec" data-act="sGoal">목표 설정</button></div>';
+    h += '<div class="card"><h3>목표</h3><div style="margin-top:8px">' + goalSummary(g) + '</div></div>';
+    if (D.intake) {
+      var a = D.intake.answers || {};
+      h += '<details class="card"><summary class="serif" style="font-weight:700;cursor:pointer">가입 설문</summary><div class="small" style="margin-top:6px">목표: ' + esc(a.goal || '-') + '<br>운동 경험: ' + esc(a.exp || '-') + '<br>활동량: ' + esc(a.activity || '-') + '<br>통증 이력: ' + esc(a.injury || '-') + '<br>질환·약: ' + esc(a.medical || '-') + '</div></details>';
+    }
+    h += '<div class="card"><h3>최근 7일</h3>' + trend(D) + '</div>';
+    // 날짜
+    h += '<div class="datestrip" id="sstrip">';
+    for (var i = 13; i >= 0; i--) { var dd = addDays(todayKey(), -i); h += '<div class="dchip' + (dd === d ? ' on' : '') + (canEdit(dd) ? '' : ' lock') + (D.recs[dd] ? ' has' : '') + '" data-act="sDay" data-arg="' + dd + '"><div class="w">' + (i ? wd(dd) : '오늘') + '</div><div class="d">' + Number(dd.slice(8)) + '</div><div class="dot"></div></div>'; }
+    h += '</div>';
+    h += '<h3 style="margin:4px 0">' + md(d) + '(' + wd(d) + ') 기록 ' + (r ? (r.status === 'submitted' ? '<span class="badge ok">제출</span>' : '<span class="badge">작성 중</span>') : '<span class="badge">기록 없음</span>') + '</h3>';
+    if (r) {
+      h += '<div class="card"><div class="grid3">' +
+        [['체중', r.weight, 'kg'], ['수면', r.sleep, '시간'], ['걸음', r.steps, '보'], ['물', r.water, 'L'], ['골격근', r.muscle, 'kg'], ['체지방', r.body_fat, '%']].map(function (x) { return '<div class="stat"><div class="k">' + x[0] + '</div><div class="v">' + (x[1] == null ? '-' : esc(x[1]) + '<span class="tiny mute"> ' + x[2] + '</span>') + '</div></div>'; }).join('') + '</div>' +
+        '<div class="row wrap" style="margin-top:8px;gap:10px">' + Object.keys(SCALES).map(function (k) { return '<span class="small">' + SCALES[k][0] + ' ' + (r[k] ? FACES[r[k] - 1] + ' ' + SCALES[k][1][r[k] - 1] : '-') + '</span>'; }).join('') + '</div>' +
+        '<div class="chips" style="margin-top:8px">' + ((r.pain || []).length ? r.pain.map(function (p) { var s = String(p).split(':'); return '<span class="chip l' + painLevelOf(p) + '">' + esc(s[0]) + ' · ' + esc(s[1] || '약') + '</span>'; }).join('') : '<span class="small mute">통증 없음</span>') + '</div></div>';
+      var wk = r.trained === 'rest' ? '쉬는 날' : r.trained === 'pt' ? 'PT' : r.trained === 'self' ? '개인운동' : '기록 없음';
+      h += '<div class="card"><h3>운동 · ' + wk + '</h3>' + ((r.workouts || []).length ? r.workouts.map(function (w) { return '<div class="item small"><span class="grow">' + esc(w.name) + ' <span class="tiny mute">' + esc(w.part || '') + '</span></span><span>' + (w.w != null ? w.w + 'kg · ' : '') + (w.reps != null ? w.reps + (w.part === '유산소' ? '분' : '회') : '') + (w.sets != null ? ' × ' + w.sets + '세트' : '') + '</span></div>'; }).join('') : '') + '</div>';
+      var t = r.tot || {};
+      h += '<div class="card"><div class="row between"><h3>식단</h3><span class="small">' + nutLine(t) + '</span></div>' + goalBars(t, g) + shortText({ kcal: n0(t.kcal), carb: n0(t.carb), protein: n0(t.protein), fat: n0(t.fat) }, g) + '</div>';
+    }
+    var meals = (r && r.meals) || {};
+    MEALS.concat([['day', '하루 전체']]).forEach(function (mm) {
+      var k = mm[0], ml = meals[k] || {}, items = ml.items || [];
+      var phs = D.photos.filter(function (p) { return p.meal === k; });
+      var fbs = D.fb.filter(function (f) { return f.record_date === d && f.meal === k; });
+      if (k !== 'day' && !items.length && !phs.length && !fbs.length && !ml.memo && !canEdit(d)) return;
+      h += '<div class="card"><div class="row between"><h3>' + mm[1] + '</h3>' + (k !== 'day' ? '<span class="small mute">' + r0(sumN(items).kcal) + ' kcal' + (ml.full ? ' · ' + FULL_FACE[ml.full - 1] + ' ' + FULL[ml.full - 1] : '') + '</span>' : '') + '</div>';
+      if (k !== 'day') {
+        h += items.length ? items.map(function (it) { var x = itemN(it); return '<div class="item small"><span class="grow">' + esc(it.name) + ' ' + srcBadge(it.src) + (it.via === 'ai' ? ' <span class="tiny mute">📷AI</span>' : '') + '</span><span class="mute">' + amtLabel(it) + ' · ' + r0(x.kcal) + 'kcal · 단' + r1(x.protein) + '</span></div>'; }).join('') : '<p class="small mute" style="margin:4px 0">기록 없음</p>';
+        if (ml.memo) h += '<p class="small" style="margin:6px 0 0">📝 ' + esc(ml.memo) + '</p>';
+        if (phs.length) h += '<div class="photos">' + phs.map(function (p) { return '<div class="ph"><img src="' + esc(p.url || '') + '" data-act="zoom" data-arg="' + esc(p.url || '') + '"></div>'; }).join('') + '</div>';
+      }
+      fbs.forEach(function (f) { h += '<div class="fbx"><div class="row between"><span>💬 <b>' + esc(nameOf(f.author_id) || '트레이너') + '</b> ' + esc(f.body) + '</span>' + (f.author_id === S.me.id ? '<button class="x" data-act="sFbDel" data-arg="' + f.id + '">×</button>' : '') + '</div></div>'; });
+      if (canEdit(d)) h += '<div class="row" style="margin-top:8px"><input class="inp" id="fb_' + k + '" placeholder="' + mm[1] + ' 피드백 남기기"><button class="btn sm" data-act="sFb" data-arg="' + k + '">보내기</button></div>';
+      h += '</div>';
+    });
+    if (!canEdit(d)) h += '<p class="notice">피드백은 오늘 포함 최근 7일 기록에만 남길 수 있어요.</p>';
+    h += '<p class="notice">회원 건강 정보예요. 캡처·공유하지 마세요.</p></div>';
+    app.innerHTML = h;
+    var s = $('#sstrip'), c = s && $('.dchip.on', s);
+    if (c) { s.style.scrollBehavior = 'auto'; var sr = s.getBoundingClientRect(), cr = c.getBoundingClientRect(); s.scrollLeft += (cr.left + cr.width / 2) - (sr.left + sr.width / 2); s.style.scrollBehavior = ''; }
+  }
+  ACT.sFb = async function (meal) {
+    var D = T.detail, inp = $('#fb_' + meal), body = inp.value.trim(); if (!body) return;
+    var r = await sb.from('feedback').insert({ member_id: D.m.id, record_date: D.date, meal: meal, author_id: S.me.id, body: body }).select().single();
+    if (r.error) return toast(errMsg(r.error));
+    D.fb.push(r.data); renderDetail(); toast('피드백을 남겼어요');
+  };
+  ACT.sFbDel = async function (id) {
+    if (!confirm('이 피드백을 지울까요?')) return;
+    var r = await sb.from('feedback').delete().eq('id', Number(id));
+    if (r.error) return toast(errMsg(r.error));
+    T.detail.fb = T.detail.fb.filter(function (f) { return String(f.id) !== String(id); }); renderDetail();
+  };
+  async function assign(tid) {
+    var D = T.detail;
+    var r = await sb.rpc('assign_trainer', { p_member: D.m.id, p_trainer: tid });
+    if (r.error) return toast(errMsg(r.error));
+    D.m.trainer_id = tid; toast(tid ? '담당을 지정했어요' : '담당을 해제했어요'); renderDetail();
+  }
+  ACT.sAssign = function (a) { if (a === 'none' && !confirm('담당을 해제할까요?')) return; assign(a === 'me' ? S.me.id : null); };
+  ACT.sAssignSel = function () { assign($('#s_tr').value || null); };
+  ACT.sGoal = function () {
+    var D = T.detail;
+    goalSheet(D.m.goal, D.m.name + '님 목표 설정', async function (g) {
+      var r = await sb.rpc('set_member_goal', { p_member: D.m.id, p_goal: g });
+      if (r.error) throw r.error;
+      D.m.goal = g; renderDetail();
+    });
+  };
+
+  // ---------- 초대 ----------
+  function vInvite() {
+    var h = '<div class="card"><h3>초대 링크 만들기</h3><p class="small mute">링크는 1번만 쓸 수 있고 14일 뒤 만료돼요.' + (isAdmin() ? '' : ' 내가 만든 회원 링크로 가입하면 내 회원으로 바로 지정돼요.') + '</p>';
+    if (isAdmin()) h += '<label class="lbl">지점</label><select class="inp" id="inv_br"><option value="망포">망포점</option><option value="서천">서천점</option></select>';
+    h += '<div class="grid2" style="margin-top:10px"><button class="btn" data-act="sInvite" data-arg="member">회원 초대 링크</button>' + (isAdmin() ? '<button class="btn sec" data-act="sInvite" data-arg="staff">직원 초대 링크</button>' : '') + '</div>';
+    if (T.inviteLink) h += '<div class="card tight" style="margin-top:12px;background:var(--brown-l)"><div class="small" style="word-break:break-all" id="inv_link">' + esc(T.inviteLink) + '</div><div class="grid2" style="margin-top:8px"><button class="btn sm" data-act="sCopy">복사</button><button class="btn sm sec" data-act="sShare">공유</button></div></div>';
+    h += '</div><div class="card"><h3>최근 만든 링크</h3><div id="inv_list"><p class="empty"><span class="spin"></span></p></div></div>';
+    setTimeout(loadInvites, 0);
+    return h;
+  }
+  async function loadInvites() {
+    var r = await sb.from('invites').select('*').order('created_at', { ascending: false }).limit(20);
+    var el = $('#inv_list'); if (!el) return;
+    var now = Date.now();
+    el.innerHTML = (r.data || []).length ? r.data.map(function (i) {
+      var st = i.used_at ? '<span class="badge ok">사용됨</span>' : new Date(i.expires_at).getTime() < now ? '<span class="badge">만료</span>' : '<span class="badge warn">대기</span>';
+      return '<div class="item small"><span class="grow">' + (i.role === 'staff' ? '직원' : '회원') + ' · ' + esc(i.branch) + '점 <span class="tiny mute">' + esc(String(i.created_at).slice(5, 10)) + '</span></span>' + st + '</div>';
+    }).join('') : '<p class="empty">아직 없어요.</p>';
+  }
+  ACT.sInvite = async function (role) {
+    var br = $('#inv_br') ? $('#inv_br').value : null;
+    var r = await sb.rpc('create_invite', { p_role: role, p_branch: br });
+    if (r.error) return toast(errMsg(r.error));
+    T.inviteLink = location.origin + (role === 'staff' ? '/staff' : '/') + '#j-' + r.data;
+    render();
+  };
+  ACT.sCopy = function () {
+    var t = T.inviteLink;
+    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { toast('복사했어요'); }, function () {
+      var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); toast('복사했어요'); } catch (e) { toast('길게 눌러 복사해 주세요'); } ta.remove();
+    });
+  };
+  ACT.sShare = function () {
+    if (navigator.share) navigator.share({ title: 'ARDOR 가입 링크', text: '아르더짐 앱 가입 링크예요 (1회용)', url: T.inviteLink }).catch(function () {});
+    else ACT.sCopy();
+  };
+
+  // ---------- 직원 승인 (관리자) ----------
+  function vApprove() {
+    var h = '<div class="card"><h3>가입 신청</h3>' + (T.applicants.length ? T.applicants.map(function (a) {
+      return '<div class="item"><div class="grow"><b>' + esc(a.name) + '</b> <span class="tiny mute">' + esc(a.login_id) + ' · ' + esc(a.branch) + '점</span></div><button class="btn sm" data-act="sReview" data-arg="' + a.id + ':1">승인</button><button class="btn sm line" data-act="sReview" data-arg="' + a.id + ':0">거절</button></div>';
+    }).join('') : '<p class="empty">대기 중인 신청이 없어요.</p>') + '</div>';
+    h += '<div class="card"><h3>직원</h3>' + T.staff.map(function (s) { return '<div class="item small"><span class="grow">' + esc(s.name) + ' <span class="tiny mute">' + esc(s.login_id) + '</span></span><span class="mute">' + esc(s.branch) + '점 · ' + (s.role === 'admin' ? '관리자' : '직원') + '</span></div>'; }).join('') + '</div>';
+    return h;
+  }
+  ACT.sReview = async function (a) {
+    var p = a.split(':'), ok = p[1] === '1';
+    if (!ok && !confirm('거절할까요?')) return;
+    var r = await sb.rpc('review_staff', { p_user: p[0], p_ok: ok });
+    if (r.error) return toast(errMsg(r.error));
+    await loadAll(); render(); toast(ok ? '승인했어요' : '거절했어요');
+  };
+
+  // ---------- 설정 (관리자) ----------
+  function vSettings() {
+    return '<div class="card" id="setbox"><h3>앱 설정</h3><p class="empty"><span class="spin"></span></p></div>' +
+      '<div class="notice">AI 사진 분석은 1회마다 Claude API 요금이 나가요. 하루 한도는 회원 1명 기준이에요.</div>';
+  }
+  async function loadSettings() {
+    var r = await sb.from('app_settings').select('*');
+    var v = {}; (r.data || []).forEach(function (x) { v[x.key] = x.value; });
+    var el = $('#setbox'); if (!el) return;
+    el.innerHTML = '<h3>앱 설정</h3>' +
+      '<label class="chk"><input type="checkbox" id="st_os"' + (v.open_signup ? ' checked' : '') + '>회원 자유 가입 (초대 링크 없이 앱 주소로 가입)</label>' +
+      '<label class="chk"><input type="checkbox" id="st_ss"' + (v.open_staff_signup ? ' checked' : '') + '>직원 가입 신청 받기 (/staff에서 신청 → 승인)</label>' +
+      '<label class="lbl">AI 사진 분석 하루 한도 (1인당)</label><input class="inp" id="st_ai" type="number" inputmode="numeric" value="' + (v.ai_daily_limit != null ? v.ai_daily_limit : 20) + '">' +
+      '<button class="btn" data-act="sSetSave" style="margin-top:12px">저장</button>';
+  }
+  ACT.sSetSave = async function () {
+    var calls = [['open_signup', $('#st_os').checked], ['open_staff_signup', $('#st_ss').checked], ['ai_daily_limit', Math.max(0, Math.round(n0($('#st_ai').value)))]];
+    for (var i = 0; i < calls.length; i++) {
+      var r = await sb.rpc('set_setting', { p_key: calls[i][0], p_value: calls[i][1] });
+      if (r.error) return toast(errMsg(r.error));
+    }
+    toast('설정을 저장했어요');
+  };
+
+  return { start: start };
+})();
+
+// ================= 시작 =================
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  navigator.serviceWorker.register('/sw.js').catch(function () {});
+}
+boot();
+})();
+</script>
+</body>
+</html>
