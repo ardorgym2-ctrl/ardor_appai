@@ -1,0 +1,5 @@
+{ "name": "아르더짐", "short_name": "아르더짐", "start_url": "/", "scope": "/", "display": "standalone",
+  "background_color": "#F9F9EF", "theme_color": "#955C3E", "lang": "ko",
+  "icons": [ { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+             { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+             { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" } ] }
