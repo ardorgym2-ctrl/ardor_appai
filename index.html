@@ -450,7 +450,8 @@ button.stat[aria-pressed="true"] { box-shadow: inset 0 -3px 0 var(--accent); }
 .dotm { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-left: 5px; vertical-align: middle; }
 
 /* ===== 브랜드 스타일(아르더짐): 크림 바탕 · 브라운 포인트 · 명조 제목 ===== */
-body { font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+body { font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; word-break: keep-all; overflow-wrap: break-word; }
+.rate.faces button { word-break: keep-all; text-align: center; }
 h1, h2 { font-family: var(--display); letter-spacing: -.005em; }
 body.pre-auth .top { display: none; }
 body.pre-auth { padding-block: 0 40px; }
@@ -1302,8 +1303,8 @@ var EXDB = [["벤치프레스", "가슴"], ["인클라인 벤치프레스", "가
   function aiHTML() {
     var h = '<div class="picker" id="aiBox"><div class="res-h"><b>📷 사진 분석</b><button type="button" class="btn link sm" data-act="aiclose">닫기</button></div>';
     if (AI.img) h += '<img src="' + esc(AI.img) + '" alt="분석한 사진" style="width:100%;max-height:180px;object-fit:contain;border-radius:10px;background:var(--surface-2)">';
-    if (AI.status === 'loading') return h + '<p class="loading">사진을 보고 음식을 찾고 있어요… (10초쯤 걸려요)</p></div>';
-    if (AI.status === 'error') return h + '<p class="err">' + esc(AI.msg) + '</p><div class="qrow"><label class="btn sm">다른 사진으로 다시<input class="sr" type="file" accept="image/*" data-f="aifile"></label><button type="button" class="btn sm" data-act="pkopen">음식 검색으로 넣기</button></div></div>';
+    if (AI.status === 'loading') return h + '<p class="loading">사진을 보고 음식을 찾고 있어요…<br><small>10초쯤 걸려요</small></p><p class="hint" style="text-align:center;line-height:1.7">AI는 음식 종류는 잘 알아봐요.<br>다만 <b>양(g)은 어림값</b>이라 실제와 다를 수 있어요.<br>결과가 나오면 양을 꼭 확인해 주세요.<br><small>영양성분표는 숫자를 그대로 읽어서 더 정확해요.</small></p></div>';
+    if (AI.status === 'error') return h + '<p class="err">' + esc(AI.msg) + '</p>' + (AI.img && meals[AI.i].photos.length < 4 ? '<button type="button" class="btn sm" data-act="aiattach" style="align-self:flex-start">이 사진만 식사 사진으로 첨부</button>' : '') + '<div class="qrow"><label class="btn sm">다른 사진으로 다시<input class="sr" type="file" accept="image/*" data-f="aifile"></label><button type="button" class="btn sm" data-act="pkopen">음식 검색으로 넣기</button></div></div>';
     if (!AI.rows.length) return h + '<p class="hint">' + esc(AI.note || '음식이나 영양성분표를 찾지 못했어요.') + ' 다른 사진으로 다시 해 보거나 음식 검색으로 넣어 주세요.</p><div class="qrow"><label class="btn sm">다른 사진으로 다시<input class="sr" type="file" accept="image/*" data-f="aifile"></label><button type="button" class="btn sm" data-act="pkopen">음식 검색으로 넣기</button></div></div>';
     h += '<p class="hint">AI가 알아본 음식을 <b>음식 DB</b>에서 찾아 계산했어요. 음식과 양(g)이 맞는지 확인해 주세요.</p><ul class="items2">';
     AI.rows.forEach(function (row, k) {
@@ -1414,11 +1415,10 @@ var EXDB = [["벤치프레스", "가슴"], ["인클라인 벤치프레스", "가
   function mealHTML(m, i) {
     var h = '<article class="meal" data-i="' + i + '"><div class="meal-h"><h3>' + m.slot + (i === 3 ? ' <small style="font-weight:400;color:var(--ink-2)">(선택)</small>' : '') + '</h3><span class="pill ' + (liveItems(m).length ? 'good' : 'mute') + '" id="mbadge' + i + '">' + badgeTxt(m) + '</span></div>';
     if (m.items.length) h += '<ul class="items2">' + m.items.map(function (it, ii) { return itemHTML(it, i, ii); }).join('') + '</ul><div id="msum' + i + '">' + mealSumHTML(m) + '</div>';
-    h += AI && AI.i === i ? aiHTML() : PK.i === i ? pickerHTML() : '<div class="qrow"><button type="button" class="btn" data-act="pkopen" style="flex:1">+ 음식 추가</button><label class="btn" style="flex:1">📷 사진으로 분석<input class="sr" type="file" accept="image/*" data-f="aifile"></label></div>';
-    h += '<div class="f"><span class="lab">식사 사진 (선택, 최대 4장)</span>' +
+    h += AI && AI.i === i ? aiHTML() : PK.i === i ? pickerHTML() : '<div style="display:flex;flex-direction:column;gap:8px"><button type="button" class="btn" data-act="pkopen">+ 음식 추가</button><label class="btn primary">📷 사진 찍으면 AI가 계산해요<input class="sr" type="file" accept="image/*" data-f="aifile"></label></div>';
+    if (m.photos.length) h += '<div class="f"><span class="lab">식사 사진</span>' +
       (m.photos.length ? '<div class="photos">' + m.photos.map(function (p, pi) { return '<span class="ph"><img src="' + esc(p.img) + '" alt="' + m.slot + ' 사진 ' + (pi + 1) + '"><button type="button" class="x2" data-act="rmph" data-pi="' + pi + '" aria-label="사진 삭제">×</button></span>'; }).join('') + '</div>' : '') +
-      (m.photos.length < 4 ? '<label class="btn sm" style="align-self:flex-start">사진 추가<input class="sr" type="file" accept="image/*" multiple data-f="file"></label>' : '') +
-      '<span class="note-s">담당 트레이너가 보고 피드백을 남겨요. 다른 회원에게는 보이지 않아요.</span></div>';
+      '<span class="note-s">📷로 찍은 사진이에요. 담당 트레이너가 보고 피드백을 남겨요. 다른 회원에게는 보이지 않아요.</span></div>';
     h += '<div class="f"><span class="lab" id="fl' + i + '">식사 후 포만감 (선택)</span><div class="rate faces" data-mk="full" role="group" aria-labelledby="fl' + i + '">' + facesHTML(FULL_FACES, m.full, '포만감') + '</div></div>';
     h += '<div class="f"><label for="note' + i + '">메모 (선택)</label><input id="note' + i + '" class="txt" data-f="note" placeholder="예: 외식이라 양을 대충 잡았어요" value="' + esc(m.note) + '"></div>';
     return h + fbHTML(m.slot) + '</article>';
@@ -1811,6 +1811,7 @@ var EXDB = [["벤치프레스", "가슴"], ["인클라인 벤치프레스", "가
     if (act === 'aiclose') { AI = null; renderMeals(); return; }
     if (act === 'airm') { if (AI) { AI.rows.splice(+b.closest('.it').getAttribute('data-ai'), 1); renderMeals(); } return; }
     if (act === 'aiadd') { aiAdd(); return; }
+    if (act === 'aiattach') { if (AI && AI.img && m.photos.length < 4) { m.photos.push({ id: 'n' + rndToken(), img: AI.img, saved: false }); AI = null; renderMeals(); refresh(); scheduleDraft(); } return; }
     if (act === 'pkopen') { AI = null; PK = newPK(); PK.i = i; renderMeals(); var qi = $('pkq'); if (qi) qi.focus(); }
     else if (act === 'pkclose') { PK = newPK(); renderMeals(); }
     else if (act === 'pkchip') { PK.qty = b.getAttribute('data-v'); var q2 = $('pkQty'); if (q2) q2.value = PK.qty; $('pkPrev').innerHTML = prevHTML(); $('pkChips').innerHTML = chipsHTML(); }
