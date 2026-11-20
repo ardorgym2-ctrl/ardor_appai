@@ -2066,8 +2066,9 @@ var EXDB = [["벤치프레스", "가슴"], ["인클라인 벤치프레스", "가
   /* ---------- 비밀번호: 본인 변경 / 담당 선생님·대표의 임시 비밀번호 발급 ---------- */
   var tmpPw = null, pwArm = null;
   function pwBlock(m) {
-    if (!cur || !(cur.admin || m.trainer === cur.acct)) return '';
+    if (!cur) return '';
     var h = '<div class="asg" id="pwBox"><span>비밀번호</span>';
+    if (!(cur.admin || m.trainer === cur.acct)) return h + '<small class="mute">' + (m.trainer ? '임시 비밀번호는 담당 선생님(' + esc(trainerName(m.trainer)) + ')이나 대표님이 발급할 수 있어요.' : '임시 비밀번호는 담당 선생님만 발급할 수 있어요. 먼저 위의 "내 회원으로 지정"을 눌러 주세요.') + '</small></div>';
     if (tmpPw && tmpPw.acct === m.acct) {
       h += '<span>임시 비밀번호 <b class="num" style="font-size:17px;letter-spacing:.06em">' + esc(tmpPw.pw) + '</b></span><button type="button" class="btn sm" data-pwcopy>복사</button>' +
         '<small class="mute" style="flex-basis:100%">회원에게 알려 주고, 로그인한 뒤 설정에서 새 비밀번호로 바꾸게 해 주세요. 이 화면을 나가면 다시 볼 수 없어요.</small>';
